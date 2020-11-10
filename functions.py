@@ -1,5 +1,5 @@
 import numpy as np
-import 
+from math import *
 def wood(X):
     """[wood function]
     Args:
@@ -25,4 +25,23 @@ def wood(X):
 def extended_powell_singular(X):
     assert len(X) % 4 == 0, "Len of X must be a multiple of 4"
     return sum(
-        (sum(((X[idx] + 10 * X[idx + 1])**2)) for idx in range(0, len(X), 4)))
+        (sum(((X[idx] + 10 * X[idx + 1])**2,
+                5 * (X[idx+2] - X[idx+3])**2,
+                (X[idx+1] - X[idx+2])**4,
+                10 * (X[idx] - X[idx+3])**4,
+            )) for idx in range(0, len(X), 4)))
+
+def trigonometric(X):
+    n = len(X)
+    sum_cos = sum((cos(x) for x in X))
+    return sum(
+        ( (n - sum_cos + (idx + 1) * (1 - cos(x)) - sin(x)) ** 2 for idx, x in enumerate(X))
+    )
+print("wood funtion")
+print(wood([1,1,1,1]))
+print("extended_powell_singular")
+for i in [20, 40, 60, 80 ,100]:
+    print(extended_powell_singular([0]*i))
+print("trigonometric")
+for i in [20, 40, 60, 80 ,100]:
+    print(trigonometric([1/i for _ in range(i)]))
