@@ -1,0 +1,77 @@
+import numpy as np
+from goto import with_goto
+import copy
+import functions 
+
+def inexactLineSearch(func,gfunc,x0,d,start=0,end=1e10,rho=0.1,sigma=0.4,criterion='Wolfe Powell',appendix=False):
+    """[summary]
+
+    Args:
+        func ([函数对象]): [目标函数]
+        gfunc ([函数对象]): [目标函数的一阶导函数]
+        x0 ([np.array]]): [初值点]
+        d ([np.array]]): [下降方向]
+        start (int, optional): [步长下界]. Defaults to 0.
+        end ([type], optional): [步长上界]. Defaults to 1e10.
+        rho (float, optional): [Armijo准则中的参数]. Defaults to 0.1, range in (0, 1/2).
+        sigma (float, optional): [Wolfe准则中的参数]. Defaults to 0.4, range in (rho, 1).
+        criterion (str, optional): [准则名称]. Defaults to 'Wolfe Powell'.
+        appendix (bool, optional): [description]. Defaults to False.
+
+    Returns:
+        [type]: [description]
+    """
+    '''Inexact Line Search Method with four available criterion:
+    1.Armijo Goldstein
+    2.Wolfe Powell
+    3.Strong Wolfe Powell
+    4.Simple'''
+
+    if appendix == True:
+        alpha0 = (start + end) / 2   # save initial point
+
+    # reduce unnecessary caculations in loop
+    f0, gf0 = func(x0), gfunc(x0)
+    # gf0 must be a numpy array
+    gkdk = gf0.dot(d)
+    
+    wolfe_boundary = sigma * gkdk
+    strong_wolfe_boundary = sigma * abs(gkdk)
+
+    iter_num = 0
+    while True:
+        alpha = (start + end) / 2
+        armijo_boundary = f0 + rho * gkdk * alpha
+        goldstein_boundary = f0 + (1 - rho) * gkdk * alpha
+        fAlpha, gfAlpha = func(x0 + alpha * d), gfunc(x0 + alpha * d)
+
+        # different criterions have same condition1 to avoid too large alpha
+        armijo_condition = (fAlpha <= armijo_boundary)
+        # different criterions have different condition2 to avoid too small alpha
+        if criterion == 'Armijo Goldstein':
+            condition2 = (fAlpha >= goldstein_boundary)
+        elif criterion == 'Wolfe Powell':
+            condition2 = (gfAlpha >= wolfe_boundary)
+        elif criterion == 'Strong Wolfe Powell':
+            condition2 = (abs(gfAlpha) <= strong_wolfe_boundary)
+        else:
+            condition2 = True
+
+        # update start or end point or stop iteration
+        if armijo_condition == False:
+            end = alpha
+        elif condition2 == False:
+            start = alpha
+        else:
+            alpha_star = alpha
+            min_value = fAlpha
+            break
+        iter_num += 1
+
+    if appendix == True:
+        print("方法：非精确线搜索；准则：%s\n" % criterion)
+        print("初始点：%.2f" % (alpha0))
+        print("停止点：%.4f; 停止点函数值：%.4f; 迭代次数：%d" % (alpha_star, min_value, iter_num))
+
+    return alpha_star, min_value, iter_num
+
