@@ -4,13 +4,13 @@ import copy
 import functions 
 import functools
 
-def inexactLineSearch(func,gfunc,x0,d,start=0,end=1e10,rho=0.1,sigma=0.4, criterion='Wolfe Powell', symbols_list=None, appendix=False):
+def inexact_line_search(func,gfunc,X,d,start=0,end=1e10,rho=0.1,sigma=0.4, criterion='Wolfe Powell', symbols_list=None, appendix=False):
     """[summary]
 
     Args:
-        func ([函数对象]): [目标函数]
-        gfunc ([函数对象]): [目标函数的一阶导函数]
-        x0 ([np.array]]): [初值点]
+        func ([回调函数]): [目标函数]
+        gfunc ([回调函数]): [目标函数的一阶导函数]
+        X ([np.array]]): [初值点]
         d ([np.array]]): [下降方向]
         start (int, optional): [步长下界]. Defaults to 0.
         end ([type], optional): [步长上界]. Defaults to 1e10.
@@ -33,7 +33,7 @@ def inexactLineSearch(func,gfunc,x0,d,start=0,end=1e10,rho=0.1,sigma=0.4, criter
         alpha0 = (start + end) / 2   # save initial point
 
     # reduce unnecessary caculations in loop
-    f0, gf0 = func(x0), gfunc(x0)
+    f0, gf0 = func(X), gfunc(X)
     # gf0 must be a numpy array
     gkdk = gf0.dot(d)
     wolfe_boundary = sigma * gkdk
@@ -44,7 +44,7 @@ def inexactLineSearch(func,gfunc,x0,d,start=0,end=1e10,rho=0.1,sigma=0.4, criter
         alpha = (start + end) / 2
         armijo_boundary = f0 + rho * gkdk * alpha
         goldstein_boundary = f0 + (1 - rho) * gkdk * alpha
-        fAlpha, gfAlpha = func(x0 + alpha * d), gfunc(x0 + alpha * d)
+        fAlpha, gfAlpha = func(X + alpha * d), gfunc(X + alpha * d)
         gkAlpha_dk = gfAlpha.dot(d)
         # different criterions have same condition1 to avoid too large alpha
         armijo_condition = (fAlpha <= armijo_boundary)
@@ -77,15 +77,12 @@ def inexactLineSearch(func,gfunc,x0,d,start=0,end=1e10,rho=0.1,sigma=0.4, criter
 
     return alpha_star, min_value, iter_num
 
-def add_times(a, b, c):
-    return (a + b) * c
-
 def test():
     x0 = np.array([-3, -1, -3, -1])
     d0 = np.array([2, 1, 2, 1])
     diff_wood_list, symbols_wood_list = functions.diff_wood()
     g_wood_partial = functools.partial(functions.g_wood, diff_list=diff_wood_list, symbols_list=symbols_wood_list)
-    alpha_star, min_value, iter_num = inexactLineSearch(functions.wood, g_wood_partial, x0, d0, appendix=True)
+    alpha_star, min_value, iter_num = inexact_line_search(functions.wood, g_wood_partial, x0, d0, appendix=True)
     print(functions.wood(x0 + d0 * alpha_star))
 
 def main():
