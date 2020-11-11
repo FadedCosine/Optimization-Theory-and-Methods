@@ -2,8 +2,9 @@ import numpy as np
 from goto import with_goto
 import copy
 import functions 
+import functools
 
-def inexactLineSearch(func,gfunc,x0,d,start=0,end=1e10,rho=0.1,sigma=0.4,criterion='Wolfe Powell',appendix=False):
+def inexactLineSearch(func,gfunc,x0,d,start=0,end=1e10,rho=0.1,sigma=0.4, criterion='Wolfe Powell', symbols_list=None, appendix=False):
     """[summary]
 
     Args:
@@ -16,6 +17,7 @@ def inexactLineSearch(func,gfunc,x0,d,start=0,end=1e10,rho=0.1,sigma=0.4,criteri
         rho (float, optional): [Armijo准则中的参数]. Defaults to 0.1, range in (0, 1/2).
         sigma (float, optional): [Wolfe准则中的参数]. Defaults to 0.4, range in (rho, 1).
         criterion (str, optional): [准则名称]. Defaults to 'Wolfe Powell'.
+        symbols_list ([list]): 导函数的变量符号列表
         appendix (bool, optional): [description]. Defaults to False.
 
     Returns:
@@ -34,7 +36,6 @@ def inexactLineSearch(func,gfunc,x0,d,start=0,end=1e10,rho=0.1,sigma=0.4,criteri
     f0, gf0 = func(x0), gfunc(x0)
     # gf0 must be a numpy array
     gkdk = gf0.dot(d)
-    
     wolfe_boundary = sigma * gkdk
     strong_wolfe_boundary = sigma * abs(gkdk)
 
@@ -44,16 +45,16 @@ def inexactLineSearch(func,gfunc,x0,d,start=0,end=1e10,rho=0.1,sigma=0.4,criteri
         armijo_boundary = f0 + rho * gkdk * alpha
         goldstein_boundary = f0 + (1 - rho) * gkdk * alpha
         fAlpha, gfAlpha = func(x0 + alpha * d), gfunc(x0 + alpha * d)
-
+        gkAlpha_dk = gfAlpha.dot(d)
         # different criterions have same condition1 to avoid too large alpha
         armijo_condition = (fAlpha <= armijo_boundary)
         # different criterions have different condition2 to avoid too small alpha
         if criterion == 'Armijo Goldstein':
             condition2 = (fAlpha >= goldstein_boundary)
         elif criterion == 'Wolfe Powell':
-            condition2 = (gfAlpha >= wolfe_boundary)
+            condition2 = (gkAlpha_dk >= wolfe_boundary)
         elif criterion == 'Strong Wolfe Powell':
-            condition2 = (abs(gfAlpha) <= strong_wolfe_boundary)
+            condition2 = (abs(gkAlpha_dk) <= strong_wolfe_boundary)
         else:
             condition2 = True
 
@@ -70,8 +71,25 @@ def inexactLineSearch(func,gfunc,x0,d,start=0,end=1e10,rho=0.1,sigma=0.4,criteri
 
     if appendix == True:
         print("方法：非精确线搜索；准则：%s\n" % criterion)
-        print("初始点：%.2f" % (alpha0))
-        print("停止点：%.4f; 停止点函数值：%.4f; 迭代次数：%d" % (alpha_star, min_value, iter_num))
+        print("初始步长：%.2f" % (alpha0))
+        print("初始点函数值：%.2f" % (f0))
+        print("停止步长：%.4f; 停止点函数值：%.4f; 迭代次数：%d" % (alpha_star, min_value, iter_num))
 
     return alpha_star, min_value, iter_num
 
+def add_times(a, b, c):
+    return (a + b) * c
+
+def test():
+    x0 = np.array([-3, -1, -3, -1])
+    d0 = np.array([2, 1, 2, 1])
+    diff_wood_list, symbols_wood_list = functions.diff_wood()
+    g_wood_partial = functools.partial(functions.g_wood, diff_list=diff_wood_list, symbols_list=symbols_wood_list)
+    alpha_star, min_value, iter_num = inexactLineSearch(functions.wood, g_wood_partial, x0, d0, appendix=True)
+    print(functions.wood(x0 + d0 * alpha_star))
+
+def main():
+    test()
+
+if __name__ == "__main__":
+    main()

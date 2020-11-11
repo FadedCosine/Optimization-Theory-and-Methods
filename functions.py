@@ -37,6 +37,19 @@ def diff_wood():
     # return [diif_x1.subs([(x1, X[0]), (x2, X[1]), (x3, X[2]), (x4, X[3])]), diif_x2.subs([(x1, X[0]), (x2, X[1]), (x3, X[2]), (x4, X[3])]), diif_x3.subs([(x1, X[0]), (x2, X[1]), (x3, X[2]), (x4, X[3])]), diif_x4.subs([(x1, X[0]), (x2, X[1]), (x3, X[2]), (x4, X[3])])]
     return [diff_x1, diff_x2, diff_x3, diff_x4], (x1, x2, x3, x4)
 
+def g_wood(X, diff_list=None, symbols_list=None):
+    """[计算wood函数在X出的一阶导数值]
+    Args:
+        X ([np.array]): Input X
+        diff_list ([list]): 导函数分量列表
+        symbols_list ([list]): 导函数的变量符号列表
+    Returns:
+        [float]: wood函数在X出的一阶导数值
+    """
+    if diff_list is not None:
+        return np.array([diff_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_list, X)]) for diff_xi in diff_list])
+
+
 def extended_powell_singular(X):
     assert len(X) % 4 == 0, "Len of X must be a multiple of 4"
     return sum(
@@ -92,12 +105,18 @@ def test():
     
     x0 = np.array([-3, -1, -3, -1])
     diff_wood_list, symbols_wood_list = diff_wood()
-    print([diff_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_wood_list, x0)]) for diff_xi in diff_wood_list])
-    for m in [20, 40, 60 ,80, 100]:
-        x0 = np.array([0] * m)
-        diff_eps_list, symbols_eps_list = diff_extended_powell_singular(m)
-        print([diff_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_eps_list, x0)]) for diff_xi in diff_eps_list])
-    for m in [20, 40, 60, 80 ,100]:
-        x0 = np.array([0] * m)
-        diff_trig_list, symbols_trig_list = diff_trigonometric(m)
-        print([diff_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_trig_list, x0)]) for diff_xi in diff_trig_list])
+    print(g_wood(x0, diff_wood_list, symbols_wood_list))
+    # for m in [20, 40, 60 ,80, 100]:
+    #     x0 = np.array([0] * m)
+    #     diff_eps_list, symbols_eps_list = diff_extended_powell_singular(m)
+    #     print([diff_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_eps_list, x0)]) for diff_xi in diff_eps_list])
+    # for m in [20, 40, 60, 80 ,100]:
+    #     x0 = np.array([0] * m)
+    #     diff_trig_list, symbols_trig_list = diff_trigonometric(m)
+    #     print([diff_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_trig_list, x0)]) for diff_xi in diff_trig_list])
+
+def main():
+    test()
+
+if __name__ == "__main__":
+    main()
