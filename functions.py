@@ -1,9 +1,10 @@
 import numpy as np
 from math import *
+import scipy
 def wood(X):
     """[wood function]
     Args:
-        X ([list or np.array]): Input X
+        X ([np.array]): Input X
 
     Returns:
         [float]: funciton values
@@ -37,11 +38,13 @@ def trigonometric(X):
     return sum(
         ( (n - sum_cos + (idx + 1) * (1 - cos(x)) - sin(x)) ** 2 for idx, x in enumerate(X))
     )
-print("wood funtion")
-print(wood([1,1,1,1]))
-print("extended_powell_singular")
-for i in [20, 40, 60, 80 ,100]:
-    print(extended_powell_singular([0]*i))
-print("trigonometric")
-for i in [20, 40, 60, 80 ,100]:
-    print(trigonometric([1/i for _ in range(i)]))
+
+def test():
+    print("wood funtion")
+    print(wood([1,1,1,1]))
+    print("extended_powell_singular")
+    for i in [20, 40, 60, 80 ,100]:
+        print(extended_powell_singular([0]*i))
+    print("trigonometric")
+    for i in [20, 40, 60, 80 ,100]:
+        print(trigonometric([0 for _ in range(i)]))
