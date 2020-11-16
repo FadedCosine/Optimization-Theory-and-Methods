@@ -75,14 +75,14 @@ def inexact_line_search(func,gfunc,X,d,start=0,end=1e10,rho=0.1,sigma=0.4, crite
         print("初始点函数值：%.2f" % (f0))
         print("停止步长：%.4f; 停止点函数值：%.4f; 迭代次数：%d" % (alpha_star, min_value, iter_num))
 
-    return alpha_star, min_value, iter_num
+    return alpha_star
 
 def test():
     x0 = np.array([-3, -1, -3, -1])
     d0 = np.array([2, 1, 2, 1])
-    diff_wood_list, symbols_wood_list = functions.diff_wood()
+    diff_wood_list, symbols_wood_list = functions.diff_wood_expression()
     g_wood_partial = functools.partial(functions.g_wood, diff_list=diff_wood_list, symbols_list=symbols_wood_list)
-    alpha_star, min_value, iter_num = inexact_line_search(functions.wood, g_wood_partial, x0, d0, appendix=True)
+    alpha_star = inexact_line_search(functions.wood, g_wood_partial, x0, d0, appendix=True)
     print(functions.wood(x0 + d0 * alpha_star))
 
 def main():

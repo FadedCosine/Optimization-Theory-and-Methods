@@ -25,8 +25,8 @@ def wood(X):
         19.8 * (x2 - 1) * (x4 - 1),
     ))
 
-def diff_wood():
-    """[wood function的导函数]
+def diff_wood_expression():
+    """[wood function的导函数的表达式]
     """
     x1, x2, x3, x4 = symbols("x1,x2,x3,x4")
     wood_func = 100 * (x1 ** 2 - x2)**2 + (x1 - 1)**2 + (x3 - 1)**2 + 90 * (x3 ** 2 - x4)**2 + 10.1 * ((x2 - 1)**2 + (x4 - 1)**2) + 19.8 * (x2 - 1) * (x4 - 1)
@@ -38,7 +38,7 @@ def diff_wood():
     return [diff_x1, diff_x2, diff_x3, diff_x4], (x1, x2, x3, x4)
 
 def g_wood(X, diff_list=None, symbols_list=None):
-    """[计算wood函数在X出的一阶导数值]
+    """[计算wood函数在X处的一阶导数值]
     Args:
         X ([np.array]): Input X
         diff_list ([list]): 导函数分量列表
@@ -47,8 +47,51 @@ def g_wood(X, diff_list=None, symbols_list=None):
         [float]: wood函数在X出的一阶导数值
     """
     if diff_list is not None:
-        return np.array([diff_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_list, X)]) for diff_xi in diff_list])
+        return np.array([diff_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_list, X)]) for diff_xi in diff_list], 'float')
 
+def hess_wood_expression():
+    G = [[] for _ in range(4)]
+
+    x1, x2, x3, x4 = sympy.symbols('x1,x2,x3,x4')
+    wood_func = 100 * (x1 ** 2 - x2)**2 + (x1 - 1)**2 + (x3 - 1)**2 + 90 * (x3 ** 2 - x4)**2 + 10.1 * ((x2 - 1)**2 + (x4 - 1)**2) + 19.8 * (x2 - 1) * (x4 - 1)
+    
+    gx_1 = sympy.diff(wood_func, x1)
+    gx_2 = sympy.diff(wood_func, x2)
+    gx_3 = sympy.diff(wood_func, x3)
+    gx_4 = sympy.diff(wood_func, x4)
+
+    Gx_11 = sympy.diff(gx_1, x1)
+    Gx_12 = sympy.diff(gx_1, x2)
+    Gx_13 = sympy.diff(gx_1, x3)
+    Gx_14 = sympy.diff(gx_1, x4)
+
+    Gx_22 = sympy.diff(gx_2, x2)
+    Gx_23 = sympy.diff(gx_2, x3)
+    Gx_24 = sympy.diff(gx_2, x4)
+
+    Gx_33 = sympy.diff(gx_3, x3)
+    Gx_34 = sympy.diff(gx_3, x4)
+
+    Gx_44 = sympy.diff(gx_4, x4)
+
+    G[0].extend([Gx_11, Gx_12, Gx_13, Gx_14])
+    G[1].extend([Gx_12, Gx_22, Gx_23, Gx_24])
+    G[2].extend([Gx_13, Gx_23, Gx_33, Gx_34])
+    G[3].extend([Gx_14, Gx_24, Gx_34, Gx_44])
+
+    return G, (x1, x2, x3, x4)
+
+def G_wood(X, G_lists=None, symbols_list=None):
+    """[计算wood函数在X处的Hess矩阵值]
+    Args:
+        X ([np.array]): Input X
+        G_list ([list]): hess矩阵表达式分量二维列表
+        symbols_list ([list]): 导函数的变量符号列表
+    Returns:
+        [float]: wood函数在X出的一阶导数值
+    """
+    if G_lists is not None:
+        return np.array([[G_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_list, X)]) for G_xi in G_list] for G_list in G_lists], 'float')
 
 def extended_powell_singular(X):
     assert len(X) % 4 == 0, "Len of X must be a multiple of 4"
