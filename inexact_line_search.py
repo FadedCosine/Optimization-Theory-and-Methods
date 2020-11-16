@@ -16,18 +16,14 @@ def inexact_line_search(func,gfunc,X,d,start=0,end=1e10,rho=0.1,sigma=0.4, crite
         end ([type], optional): [步长上界]. Defaults to 1e10.
         rho (float, optional): [Armijo准则中的参数]. Defaults to 0.1, range in (0, 1/2).
         sigma (float, optional): [Wolfe准则中的参数]. Defaults to 0.4, range in (rho, 1).
-        criterion (str, optional): [准则名称]. Defaults to 'Wolfe Powell'.
+        criterion (str, optional): [准则名称]. Defaults to 'Wolfe Powell'. 从["Armijo Goldstein", "Wolfe Powell", "Strong Wolfe Powell"]中选择
         symbols_list ([list]): 导函数的变量符号列表
         appendix (bool, optional): [description]. Defaults to False.
 
     Returns:
-        [type]: [description]
+        [float]: [搜索得到的步长]]
     """
-    '''Inexact Line Search Method with four available criterion:
-    1.Armijo Goldstein
-    2.Wolfe Powell
-    3.Strong Wolfe Powell
-    4.Simple'''
+   
 
     if appendix == True:
         alpha0 = (start + end) / 2   # save initial point
