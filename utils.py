@@ -57,6 +57,44 @@ def get_modified_G(L, D):
     C = np.dot(L, D)
     return np.dot(C, LT)
 
+def Bunch_Parlett(A):
+    """对A进行BP分解，输出DL
+
+    Args:
+        A ([np.array]): 输入的矩阵
+    """
+    # 步1：初始化
+    A_ = copy.deepcopy(A)
+    n = len(A)
+    #记录变量顺序
+    y = np.array(range(n))
+    k, m = 1, 0
+    a_tt = 0
+    t = -1
+    # 步2：求n-m阵中对角元中的最大值
+    for i in range(m, n):
+        if abs(A_[i][i]) > a_tt:
+            a_tt = abs(A_[i][i])
+            t = i
+    # 步3：求n-m阵中非对角元的最大值
+    a_ls = 0
+    l, s = -1, -1
+    if m < n - 1:
+        for i in range(m, n):
+            for j in range(m, i):
+                if abs(A_[i][j]) > a_ls:
+                    a_ls = abs(A_[i][i])
+                    l = i
+                    s = j
+    
+    # 步4：根据对角元最大值和非对角元最大值比较，判断分支
+    if a_tt == 0 and a_ls == 0:
+        goto .step8
+    elif a_tt < 2.0 / 3 * a_ls:
+        goto .step6
+    # 步5：
+    
+
 
 if __name__ == '__main__':
     L, D = modified_Cholesky([[1, 1, 2], [1, 1+1e-20, 3], [2, 3, 1]])
@@ -67,8 +105,8 @@ if __name__ == '__main__':
     G_1 = np.linalg.inv(G_)
     print(G_1)
 
-    # L, D = modified_Cholesky([[11202, 1200, 0, 0], [1200, 240, 0, 0], [0, 0, 10082, 1080], [0, 0, 1080, 220]])
-    # G_ = get_modified_G(L, D)
-    # print(L)
-    # print(D)
-    # print(G_)
+    L, D = modified_Cholesky([[11202, 1200, 0, 0], [1200, 240, 0, 0], [0, 0, 10082, 1080], [0, 0, 1080, 220]])
+    G_ = get_modified_G(L, D)
+    print(L)
+    print(D)
+    print(G_)
