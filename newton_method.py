@@ -95,7 +95,7 @@ def negative_curvature(LT, D, E):
 
 @with_goto
 def GM_newton(X, func, gfunc, hess_funct, search_mode='ELS', ILS_model="Wolfe Powell", zeta=1e-2, epsilon=1e-5, max_epoch=1000):
-    """[使用Gill Murray稳定牛顿法极小值点
+    """使用Gill Murray稳定牛顿法求极小值点
          d = -G_k^{-1} * g_k]
 
     Args:
