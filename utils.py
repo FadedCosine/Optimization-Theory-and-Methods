@@ -4,12 +4,16 @@ import numpy as np
 from goto import with_goto
 
 @with_goto
-def modified_Cholesky(G, u=1e-10):
+def modified_Cholesky(G, hyper_parameters=None, u=1e-10):
     """修正Cholesky分解
 
     Args:
         G ([np.array]): 用于分解的二维矩阵
+        hyper_parameters: (Dic): 超参数，超参数中包括：
+            u:  机器精度
     """
+    if hyper_parameters is not None:
+        u = hyper_parameters['u']
     # 步1：初始化
     gamma = 0 # 对角元最大元素
     ksai = 0 # 非对角元最大元素
@@ -107,6 +111,9 @@ def Bunch_Parlett(A):
     # print(A_)
     # y也要交换行列
     y[m], y[t] = y[t], y[m]
+    # L也要交换行列
+    L[[m, t], :] = L[[t, m], :]
+    L[:, [m, t]] = L[:, [t, m]]
     # 对D对应位置的元素赋值
     D[m][m] = A_[m][m]
     L[m][m] = 1
@@ -134,9 +141,16 @@ def Bunch_Parlett(A):
   
     A_[:, [m, s]] = A_[:, [s, m]]
     A_[:, [m + 1, l]] = A_[:, [l, m + 1]]
+    # L也要交换行列
+    L[[m, s], :] = L[[s, m], :]
+    L[[m + 1, l], :] = L[[l, m+1], :]
+  
+    L[:, [m, s]] = L[:, [s, m]]
+    L[:, [m + 1, l]] = L[:, [l, m + 1]]
     # print("交换行列后的A:".format(k=k))
     # print(A_)
-    y[m], y[s], y[m + 1], y[l] = y[s], y[m], y[l], y[m + 1], 
+    y[m], y[s] = y[s], y[m]
+    y[m + 1], y[l] = y[l], y[m + 1], 
     # 对D对应位置的元素赋值
     D[m: m + 2, m: m + 2] = copy.deepcopy(A_[m: m + 2, m: m + 2])
     L[m: m + 2, m: m + 2] = np.eye(2) # 二阶单位阵
@@ -164,9 +178,9 @@ def Bunch_Parlett(A):
 
 
 if __name__ == '__main__':
-    # G = np.array([[1, 1,       2], 
-    #               [1, 1+1e-20, 3],
-    #               [2, 3,       1]])
+    G = np.array([[1, 1,       2], 
+                  [1, 1+1e-20, 3],
+                  [2, 3,       1]])
     # print("修正Cholesky分解")
     # L, D = modified_Cholesky(G)
     # G_ = get_modified_G(L, D)
@@ -189,10 +203,16 @@ if __name__ == '__main__':
     # print("修正过的G 是：")
     # print(G_)
 
-    G = np.array([[11202, 1200, 0, 0], 
-                    [1200, 220.200000000000, 0, 19.8000000000000], 
-                    [0, 0, 10082, 1080], 
-                    [0, 19.8000000000000, 1080, 200.200000000000]])
+    # G = np.array([[11202, 1200, 0, 0], 
+    #                 [1200, 220.200000000000, 0, 19.8000000000000], 
+    #                 [0, 0, 10082, 1080], 
+    #                 [0, 19.8000000000000, 1080, 200.200000000000]])
+    G = np.array(
+        [[1, 1, 2],
+         [1, 2, 3],
+         [2, 3, 1]],
+    dtype = float
+    )
     print("BP分解")
     L, D, y= Bunch_Parlett(G)
     G_ = get_modified_G(L, D)
@@ -202,10 +222,12 @@ if __name__ == '__main__':
     print(D)
     print("修正过的G 是：")
     print(G_)
-    from scipy.linalg import ldl
-    lu, d, perm = ldl(np.array(G, dtype=float), lower=1)
-    print("LDL 的 L是 ")
-    print(lu[perm, :])
-    print("LDL 的 D是")
-    print(d)
-    
+    # from scipy.linalg import ldl
+    # lu, d, perm = ldl(np.array(G, dtype=float), lower=1)
+    # print("LDL 的 L是 ")
+    # print(lu[perm, :])
+    # print("LDL 的 D是")
+    # print(d)
+    # G_ = get_modified_G(lu, d)
+    # print("修正过的G 是：")
+    # print(G_)

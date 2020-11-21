@@ -4,6 +4,8 @@ import scipy
 import sympy
 from sympy import diff
 from sympy import symbols
+import functools
+
 def wood(X):
     """[wood function]
     Args:
@@ -42,7 +44,7 @@ def g_wood(X, diff_list=None, symbols_list=None):
     Args:
         X ([np.array]): Input X
         diff_list ([list]): 导函数分量列表
-        symbols_list ([list]): 导函数的变量符号列表
+        symbols_list ([list]): 函数的变量符号列表
     Returns:
         [float]: wood函数在X出的一阶导数值
     """
@@ -86,7 +88,7 @@ def G_wood(X, G_lists=None, symbols_list=None):
     Args:
         X ([np.array]): Input X
         G_list ([list]): hess矩阵表达式分量二维列表
-        symbols_list ([list]): 导函数的变量符号列表
+        symbols_list ([list]): 函数的变量符号列表
     Returns:
         [float]: wood函数在X出的一阶导数值
     """
@@ -98,7 +100,7 @@ def extended_powell_singular(X):
     return sum(
         (sum(((X[idx] + 10 * X[idx + 1])**2,
                 5 * (X[idx+2] - X[idx+3])**2,
-                (X[idx+1] - X[idx+2])**4,
+                (X[idx+1] - 2 * X[idx+2])**4,
                 10 * (X[idx] - X[idx+3])**4,
             )) for idx in range(0, len(X), 4)))
 
@@ -113,7 +115,7 @@ def diff_extended_powell_singular(m):
     for idx in range(0, m, 4):
         eps_func += (symbols_X[idx] + 10 * symbols_X[idx + 1])**2 + \
                 5 * (symbols_X[idx+2] - symbols_X[idx+3])**2 + \
-                (symbols_X[idx+1] - symbols_X[idx+2])**4 + \
+                (symbols_X[idx+1] - 2 * symbols_X[idx+2])**4 + \
                 10 * (symbols_X[idx] - symbols_X[idx+3])**4
     
     diff_list = []
@@ -144,15 +146,69 @@ def diff_trigonometric(m):
     return diff_list, symbols_X
  
 
+def g_function(X, diff_list=None, symbols_list=None):
+    """ 输入一阶导数的符号表达式，计算一阶导数值
+    Args:
+        X ([np.array]): Input X
+        diff_list ([list]): 导函数表达式分量列表
+        symbols_list ([list]): 函数的变量符号列表
+    Returns:
+        [float]: 输出在X处的一阶导数值
+    """
+    if diff_list is not None:
+        return np.array([diff_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_list, X)]) for diff_xi in diff_list], 'float')
+
+def hess_expression(m, diff_list=None, symbols_list=None):
+    """ 输入一阶导数的符号表达式，计算hess矩阵的符号表达式
+    Args:
+        X ([np.array]): Input X
+        diff_list ([list]): 导函数表达式分量列表
+        symbols_list ([list]): 函数的变量符号列表
+    Returns:
+        hess矩阵的符号表达式
+    """
+    G = [[] for _ in range(m)]
+    for i in range(m):
+        for j in range(i+1):
+            G[i].append(sympy.diff(diff_list[i], symbols_list[j]))
+    for j in range(m):
+        for i in range(j+1,m):
+            G[j].append(G[i][j])
+    return G, symbols_list
+
+def G_function(X, G_lists=None, symbols_list=None):
+    """ 输入hess矩阵的符号表达式，计算hess矩阵
+    Args:
+        X ([np.array]): Input X
+        G_lists ([list]): hess矩阵的符号表达式
+        symbols_list ([list]): 函数的变量符号列表
+    Returns:
+        [[np.array]]: 输出在X处的hess矩阵值
+    """
+    if G_lists is not None:
+        return np.array([[G_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_list, X)]) for G_xi in G_list] for G_list in G_lists], 'float')
+
+
 def test():
     
-    x0 = np.array([-3, -1, -3, -1])
-    diff_wood_list, symbols_wood_list = diff_wood()
-    print(g_wood(x0, diff_wood_list, symbols_wood_list))
+    # x0 = np.array([-3, -1, -3, -1])
+    # diff_wood_list, symbols_wood_list = diff_wood()
+    # print(g_wood(x0, diff_wood_list, symbols_wood_list))
     # for m in [20, 40, 60 ,80, 100]:
-    #     x0 = np.array([0] * m)
+    #     x0 = np.array([3., -1., 0. , 1.] * int(m / 4))
     #     diff_eps_list, symbols_eps_list = diff_extended_powell_singular(m)
+    #     g_eps_partial = functools.partial(functions.g_wood, diff_list=diff_wood_list, symbols_list=symbols_wood_list)
+    #     hess_wood_lists, symbols_wood_list = functions.hess_wood_expression()
+    #     G_wood_partial = functools.partial(functions.G_wood, G_lists=hess_wood_lists, symbols_list=symbols_wood_list)
+        
     #     print([diff_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_eps_list, x0)]) for diff_xi in diff_eps_list])
+    m = 20
+    x0 = np.array([1 / m] * m)
+    print(trigonometric(x0))
+    diff_list, symbols_list = diff_trigonometric(m)
+    print(g_function(x0, diff_list, symbols_list))
+    G, symbols_list = hess_expression(m, diff_list, symbols_list)
+    print(G_function(x0, G, symbols_list))
     # for m in [20, 40, 60, 80 ,100]:
     #     x0 = np.array([0] * m)
     #     diff_trig_list, symbols_trig_list = diff_trigonometric(m)

@@ -4,7 +4,7 @@ import copy
 import functions 
 import functools
 
-def inexact_line_search(func,gfunc,X,d,start=0,end=1e10,rho=0.1,sigma=0.4, criterion='Wolfe Powell', symbols_list=None, appendix=False):
+def inexact_line_search(func, gfunc, X, d, hyper_parameters=None, rho=0.1, sigma=0.4, criterion='Armijo Goldstein', start=0, end=1e10, alpha0=1e-6, t=5, symbols_list=None, appendix=False):
     """[summary]
 
     Args:
@@ -14,20 +14,28 @@ def inexact_line_search(func,gfunc,X,d,start=0,end=1e10,rho=0.1,sigma=0.4, crite
         d ([np.array]]): [下降方向]
         start (int, optional): [步长下界]. Defaults to 0.
         end ([type], optional): [步长上界]. Defaults to 1e10.
-        rho (float, optional): [Armijo准则中的参数]. Defaults to 0.1, range in (0, 1/2).
-        sigma (float, optional): [Wolfe准则中的参数]. Defaults to 0.4, range in (rho, 1).
-        criterion (str, optional): [准则名称]. Defaults to 'Wolfe Powell'. 从["Armijo Goldstein", "Wolfe Powell", "Strong Wolfe Powell"]中选择
+        hyper_parameters: (Dic): 超参数，超参数中包括：
+            rho (float, optional): [Armijo准则中的参数]. Defaults to 0.1, range in (0, 1/2).
+            sigma (float, optional): [Wolfe准则中的参数]. Defaults to 0.4, range in (rho, 1).
+            criterion (str, optional): [准则名称]. Defaults to 'Wolfe Powell'. 从["Armijo Goldstein", "Wolfe Powell", "Strong Wolfe Powell"]中选择
+            alpha0 (float, optional): 初始步长. Defaults to 1e-6
         symbols_list ([list]): 导函数的变量符号列表
         appendix (bool, optional): [description]. Defaults to False.
 
     Returns:
         [float]: [搜索得到的步长]]
     """
-   
-
-    if appendix == True:
-        alpha0 = (start + end) / 2   # save initial point
-
+ 
+    if hyper_parameters is not None:
+        rho = hyper_parameters["rho"]
+        sigma = hyper_parameters["sigma"]
+        criterion = hyper_parameters["criterion"]
+        alpha = hyper_parameters["alpha0"]
+    else:
+        alpha = alpha0
+    # if appendix == True:
+    #     alpha0 = (start + end) / 2   # save initial point
+    
     # reduce unnecessary caculations in loop
     f0, gf0 = func(X), gfunc(X)
     # gf0 must be a numpy array
@@ -37,7 +45,6 @@ def inexact_line_search(func,gfunc,X,d,start=0,end=1e10,rho=0.1,sigma=0.4, crite
 
     iter_num = 0
     while True:
-        alpha = (start + end) / 2
         armijo_boundary = f0 + rho * gkdk * alpha
         goldstein_boundary = f0 + (1 - rho) * gkdk * alpha
         fAlpha, gfAlpha = func(X + alpha * d), gfunc(X + alpha * d)
@@ -57,8 +64,14 @@ def inexact_line_search(func,gfunc,X,d,start=0,end=1e10,rho=0.1,sigma=0.4, crite
         # update start or end point or stop iteration
         if armijo_condition == False:
             end = alpha
+            alpha = (start + end) / 2
         elif condition2 == False:
+        # elif alpha < minstep:
             start = alpha
+            if end < 1e10:
+                alpha = (start + end) / 2
+            else:
+                alpha = t * alpha
         else:
             alpha_star = alpha
             min_value = fAlpha

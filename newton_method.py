@@ -7,8 +7,59 @@ import utils
 import functools
 import copy
 
+
 @with_goto
-def damp_newton(X, func, gfunc, hess_funct, search_mode='ELS', ILS_model="Wolfe Powell", epsilon=1e-5, max_epoch=1000):
+def armijo_goldstein(x0, function, diff_function, descent, a=1e-6, p=0.1, t=5):
+    # 输入：x0为当前迭代点
+    # function用于求函数值
+    # diff_function用于求导数值
+    # descent是当前步的下降方向
+    # 输出：满足Armijo-Goldstein准则的非精确线搜索的步长
+    a1 = 0
+    a2 = 10 ** 10
+    a_k = copy.deepcopy(a)
+    value_diff = diff_function(x0)
+    value = function(x0)
+
+    label.step2_ag
+    # 第二步
+    x = copy.deepcopy(x0)
+    for element in range(len(x)):
+        x[element] += a_k * descent[element]
+    gkt_dk = 0    # 计算gkT*dk的值
+    for element in range(len(value_diff)):
+        gkt_dk += value_diff[element] * descent[element]
+    if function(x) <= value + p * a_k * gkt_dk:    # 判断是否满足Armijo准则？
+        pass
+    else:
+        goto.step4_ag
+
+    # 第三步
+    x = copy.deepcopy(x0)
+    for element in range(len(x)):
+        x[element] += a_k * descent[element]
+    gkt_dk = 0    # 计算gkT*dk的值
+    for element in range(len(value_diff)):
+        gkt_dk += value_diff[element] * descent[element]
+    if function(x) >= value + (1 - p) * a_k * gkt_dk:    # 判断是否满足Goldstein准则？
+        return a_k
+    else:
+        a1 = copy.deepcopy(a_k)
+        if a2 < 10 ** 10:
+            a_k = (a1 + a2) / 2
+        else:
+            a_k = t * a_k
+        goto.step2_ag
+
+    label.step4_ag
+    # 第四步
+    a2 = copy.deepcopy(a_k)
+    a_k = (a1 + a2) / 2
+    goto.step2_ag
+
+
+@with_goto
+def damp_newton(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="ELS", epsilon=1e-5, max_epoch=1000):
     """[使用阻尼牛顿法极小值点
          d = -G_k^{-1} * g_k]
 
@@ -17,40 +68,50 @@ def damp_newton(X, func, gfunc, hess_funct, search_mode='ELS', ILS_model="Wolfe 
         func ([回调函数]): [目标函数]
         gfunc ([回调函数]): [目标函数的一阶导函数]
         hess_funct ([回调函数]): [目标函数的Hessian矩阵]
-        search_mode (str, optional): [线搜索的模式（选择精确线搜索还是非精确线搜索）]. Defaults to 'ELS'. ['ELS', 'ILS']
-        ILS_model (str, optional): [如果是非精确线搜索，选择非精确线搜索采用的准则]. Defaults to "Wolfe Powell".
-        epsilon ([float], optional): [当函数值下降小于epsilon，迭代结束]. Defaults to 1e-5.
-        max_epoch (int, optional): [最大允许的迭代次数]. Defaults to 1000.
+        hyper_parameters: (Dic): 超参数，超参数中包括：
+            search_mode (str, optional): [线搜索的模式（选择精确线搜索还是非精确线搜索）]. Defaults to 'ELS'. ['ELS', 'ILS']
+            epsilon ([float], optional): [当函数值下降小于epsilon，迭代结束]. Defaults to 1e-5.
+            max_epoch (int, optional): [最大允许的迭代次数]. Defaults to 1000.
 
     Returns:
         返回求解得到的极小值点，极小值点对应的函数值和迭代次数
     """
+    if hyper_parameters is not None:
+        search_mode = hyper_parameters["search_mode"]
+        epsilon = hyper_parameters["epsilon"]
+        max_epoch = hyper_parameters["max_epoch"]
+
     k = 1
     #计算下降方向d_k
     label .count_dk
+    G = hess_funct(X)
+    g = gfunc(X)
     try:
-        inv_hass = np.linalg.inv(hess_funct(X))
-        d = -np.dot(inv_hass , gfunc(X))
+        inv_hass = np.linalg.inv(G)
+        d = -np.dot(inv_hass , g)
     except:
-        print("Hessian 矩阵不可逆，尝试其他方法求下降方向")
-        # TODO: 加上修正Cholesky计算下降方向的参数
-        d = modified_Cholesky_for_d()
+        print("Hessian 矩阵不可逆，用修正Cholesky分解求下降方向")
+        L, D = utils.modified_Cholesky(G, hyper_parameters["modified_Cholesky"])
+        G_ = utils.get_modified_G(L, D)
+        inv_hass = np.linalg.inv(G_)
+        d = -np.dot(inv_hass , g)
     
     #计算步长
     if search_mode == "ELS":
         print("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
-        [a, b] = ELS.retreat_method(func, X, d) 
-        alpha_star = ELS.golden_method(func, X, d, a, b)
+        [a, b] = ELS.retreat_method(func, X, d, hyper_parameters=hyper_parameters["ELS"]["retreat_method"] if hyper_parameters is not None else None) 
+        alpha_star = ELS.golden_method(func, X, d, a, b, hyper_parameters=hyper_parameters["ELS"]["golden_method"] if hyper_parameters is not None else None) 
     elif search_mode == "ILS":
         print("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
-        alpha_star = ILS.inexact_line_search(func, gfunc, X, d, criterion=ILS_model)
+        alpha_star = armijo_goldstein(X, func, gfunc, d)
+        # alpha_star = ILS.inexact_line_search(func, gfunc, X, d, hyper_parameters=hyper_parameters["ILS"] if hyper_parameters is not None else None) 
     else:
         raise ValueError("参数search_mode 必须从['ELS', 'ILS']当中选择")
     
     X_new = X + d * alpha_star
     func_X_new = func(X_new)
     if abs(func_X_new - func(X)) <= epsilon:
-        print("迭代结束，迭代轮次{iter}，最终X={X}，最终函数值={func_X_new}".format(iter=k,X=X,func_X_new=func_X_new))
+        print("迭代结束，迭代轮次{iter}，最终X={X}，最终函数值={func_X_new}".format(iter=k, X=X,func_X_new=func_X_new))
         return X_new, func_X_new, k
     if k > max_epoch:
         raise Exception("超过最大迭代次数：%d", max_epoch)
@@ -59,10 +120,6 @@ def damp_newton(X, func, gfunc, hess_funct, search_mode='ELS', ILS_model="Wolfe 
     goto .count_dk
 
 
-
-# TODO：实现修正Cholesky计算下降方向
-def modified_Cholesky_for_d():
-    return
 
 def negative_curvature(LT, D, E):
     """计算负曲率方向
@@ -94,7 +151,7 @@ def negative_curvature(LT, D, E):
         return d
 
 @with_goto
-def GM_newton(X, func, gfunc, hess_funct, search_mode='ELS', ILS_model="Wolfe Powell", zeta=1e-2, epsilon=1e-5, max_epoch=1000):
+def GM_newton(X, func, gfunc, hess_funct, hyper_parameters=None, zeta=1e-2, search_mode="ELS", epsilon=1e-5, max_epoch=1000):
     """使用Gill Murray稳定牛顿法求极小值点
          d = -G_k^{-1} * g_k]
 
@@ -103,15 +160,22 @@ def GM_newton(X, func, gfunc, hess_funct, search_mode='ELS', ILS_model="Wolfe Po
         func ([回调函数]): [目标函数]
         gfunc ([回调函数]): [目标函数的一阶导函数]
         hess_funct ([回调函数]): [目标函数的Hessian矩阵]
-        search_mode (str, optional): [线搜索的模式（选择精确线搜索还是非精确线搜索）]. Defaults to 'ELS'. ['ELS', 'ILS']
-        ILS_model (str, optional): [如果是非精确线搜索，选择非精确线搜索采用的准则]. Defaults to "Wolfe Powell".
-        zeta ([float], optional): [当gk的模大于zeta， 求解方程得到下降方向]. Defaults to 1e-2.
-        epsilon ([float], optional): [当函数值下降小于epsilon，迭代结束]. Defaults to 1e-5.
-        max_epoch (int, optional): [最大允许的迭代次数]. Defaults to 1000.
+        hyper_parameters: (Dic): 超参数，超参数中包括：
+            zeta ([float], optional): [当gk的模大于zeta， 求解方程得到下降方向]. Defaults to 1e-2.
+            search_mode (str, optional): [线搜索的模式（选择精确线搜索还是非精确线搜索）]. Defaults to 'ELS'. ['ELS', 'ILS']
+            epsilon ([float], optional): [当函数值下降小于epsilon，迭代结束]. Defaults to 1e-5.
+            max_epoch (int, optional): [最大允许的迭代次数]. Defaults to 1000.
 
     Returns:
         返回求解得到的极小值点，极小值点对应的函数值和迭代次数
     """
+
+    if hyper_parameters is not None:
+        zeta = hyper_parameters["GM_newton"]["zeta"]
+        search_mode = hyper_parameters["search_mode"]
+        epsilon = hyper_parameters["epsilon"]
+        max_epoch = hyper_parameters["max_epoch"]
+
     k = 1
     assert epsilon > 0 , "must have epsilon > 0" 
     # 步2：计算g和G
@@ -141,11 +205,11 @@ def GM_newton(X, func, gfunc, hess_funct, search_mode='ELS', ILS_model="Wolfe Po
     label .step6
     if search_mode == "ELS":
         print("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
-        [a, b] = ELS.retreat_method(func, X, d) 
-        alpha_star = ELS.golden_method(func, X, d, a, b)
+        [a, b] = ELS.retreat_method(func, X, d, hyper_parameters=hyper_parameters["ELS"]["retreat_method"] if hyper_parameters is not None else None) 
+        alpha_star = ELS.golden_method(func, X, d, a, b, hyper_parameters=hyper_parameters["ELS"]["golden_method"] if hyper_parameters is not None else None) 
     elif search_mode == "ILS":
         print("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
-        alpha_star = ILS.inexact_line_search(func, gfunc, X, d, criterion=ILS_model)
+        alpha_star = ILS.inexact_line_search(func, gfunc, X, d, hyper_parameters=hyper_parameters["ILS"] if hyper_parameters is not None else None) 
     else:
         raise ValueError("参数search_mode 必须从['ELS', 'ILS']当中选择")
 
@@ -170,11 +234,11 @@ if __name__ == '__main__':
     G_wood_partial = functools.partial(functions.G_wood, G_lists=hess_wood_lists, symbols_list=symbols_wood_list)
     print("精确线搜索下的阻尼牛顿法")
     X_star, func_X_star, iter_num = damp_newton(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ELS')
-    print("非精确线搜索下的阻尼牛顿法")
-    X_star, func_X_star, iter_num = damp_newton(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ILS')
-    print("精确线搜索下的GM稳定牛顿法")
-    X_star, func_X_star, iter_num = GM_newton(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ELS')
-    print("非精确线搜索下的GM稳定牛顿法")
-    X_star, func_X_star, iter_num = GM_newton(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ILS')
+    # print("非精确线搜索下的阻尼牛顿法")
+    # X_star, func_X_star, iter_num = damp_newton(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ILS')
+    # print("精确线搜索下的GM稳定牛顿法")
+    # X_star, func_X_star, iter_num = GM_newton(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ELS')
+    # print("非精确线搜索下的GM稳定牛顿法")
+    # X_star, func_X_star, iter_num = GM_newton(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ILS')
  
 
