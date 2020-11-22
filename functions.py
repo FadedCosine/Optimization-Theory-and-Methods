@@ -5,7 +5,7 @@ import sympy
 from sympy import diff
 from sympy import symbols
 import functools
-
+import pickle 
 def wood(X):
     """[wood function]
     Args:
@@ -195,24 +195,39 @@ def test():
     # diff_wood_list, symbols_wood_list = diff_wood()
     # print(g_wood(x0, diff_wood_list, symbols_wood_list))
     # for m in [20, 40, 60 ,80, 100]:
-    #     x0 = np.array([3., -1., 0. , 1.] * int(m / 4))
-    #     diff_eps_list, symbols_eps_list = diff_extended_powell_singular(m)
-    #     g_eps_partial = functools.partial(functions.g_wood, diff_list=diff_wood_list, symbols_list=symbols_wood_list)
-    #     hess_wood_lists, symbols_wood_list = functions.hess_wood_expression()
-    #     G_wood_partial = functools.partial(functions.G_wood, G_lists=hess_wood_lists, symbols_list=symbols_wood_list)
+    #     x0 = np.array([1 / m] * m)
+    #     diff_list, symbols_list = diff_extended_powell_singular(m)
+    #     G, symbols_list = hess_expression(m, diff_list, symbols_list)
+    #     with open("cached_expression/g_extended_powell_singular_{m}.pkl".format(m=m), 'wb') as writer:
+    #         pickle.dump(diff_list, writer)
+    #     with open("cached_expression/G_extended_powell_singular_{m}.pkl".format(m=m), 'wb') as writer:
+    #         pickle.dump(G, writer)
+    #     with open("cached_expression/symbols_extended_powell_singular_{m}.pkl".format(m=m), 'wb') as writer:
+    #         pickle.dump(symbols_list, writer)
         
-    #     print([diff_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_eps_list, x0)]) for diff_xi in diff_eps_list])
-    m = 20
-    x0 = np.array([1 / m] * m)
-    print(trigonometric(x0))
-    diff_list, symbols_list = diff_trigonometric(m)
-    print(g_function(x0, diff_list, symbols_list))
-    G, symbols_list = hess_expression(m, diff_list, symbols_list)
-    print(G_function(x0, G, symbols_list))
+    #     print(g_function(x0, diff_list=diff_list, symbols_list=symbols_list))
+    #     print(G_function(x0, G_lists=G, symbols_list=symbols_list))
+       
     # for m in [20, 40, 60, 80 ,100]:
-    #     x0 = np.array([0] * m)
-    #     diff_trig_list, symbols_trig_list = diff_trigonometric(m)
-    #     print([diff_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_trig_list, x0)]) for diff_xi in diff_trig_list])
+    #     x0 = np.array([1 / m] * m)
+    #     diff_list, symbols_list = diff_trigonometric(m)
+    #     G, symbols_list = hess_expression(m, diff_list, symbols_list)
+    #     with open("cached_expression/g_trigonometric_{m}.pkl".format(m=m), 'wb') as writer:
+    #         pickle.dump(diff_list, writer)
+    #     with open("cached_expression/G_trigonometric_{m}.pkl".format(m=m), 'wb') as writer:
+    #         pickle.dump(G, writer)
+    #     with open("cached_expression/symbols_trigonometric_{m}.pkl".format(m=m), 'wb') as writer:
+    #         pickle.dump(symbols_list, writer)
+        
+    #     print(g_function(x0, diff_list=diff_list, symbols_list=symbols_list))
+    #     print(G_function(x0, G_lists=G, symbols_list=symbols_list))
+    for m in [3]:
+        x0 = np.array([1 / m] * m)
+        print(trigonometric(x0))
+        diff_list, symbols_list = diff_trigonometric(m)
+        G, symbols_list = hess_expression(m, diff_list, symbols_list)
+        print(g_function(x0, diff_list=diff_list, symbols_list=symbols_list))
+        print(G_function(x0, G_lists=G, symbols_list=symbols_list))
 
 def main():
     test()

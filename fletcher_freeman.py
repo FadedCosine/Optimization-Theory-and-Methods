@@ -6,59 +6,13 @@ import functools
 import exact_line_search as ELS
 import inexact_line_search as ILS
 import copy
+from GLL import GLL_search
+import logging
 
-@with_goto
-def armijo_goldstein(x0, function, diff_function, descent, a=0.5, p=0.01, t=5):
-    # 输入：x0为当前迭代点
-    # function用于求函数值
-    # diff_function用于求导数值
-    # descent是当前步的下降方向
-    # 输出：满足Armijo-Goldstein准则的非精确线搜索的步长，调用函数的次数
-    a1 = 0
-    a2 = 10 ** 10
-    a_k = copy.deepcopy(a)
-    value_diff = diff_function(x0)
-    value = function(x0)
-    fx_k = 1
+logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+                    datefmt='%d-%m-%Y:%H:%M:%S')
 
-    label.step2_ag
-    # 第二步
-    x = copy.deepcopy(x0)
-    for element in range(len(x)):
-        x[element] += a_k * descent[element]
-    gkt_dk = 0    # 计算gkT*dk的值
-    for element in range(len(value_diff)):
-        gkt_dk += value_diff[element] * descent[element]
-    fx_k += 1
-    if function(x) <= value + p * a_k * gkt_dk:    # 判断是否满足Armijo准则？
-        pass
-    else:
-        goto.step4_ag
-
-    # 第三步
-    x = copy.deepcopy(x0)
-    for element in range(len(x)):
-        x[element] += a_k * descent[element]
-    gkt_dk = 0    # 计算gkT*dk的值
-    for element in range(len(value_diff)):
-        gkt_dk += value_diff[element] * descent[element]
-    fx_k += 1
-    if function(x) >= value + (1 - p) * a_k * gkt_dk:    # 判断是否满足Goldstein准则？
-        return a_k, fx_k
-    else:
-        a1 = copy.deepcopy(a_k)
-        if a2 < 10 ** 10:
-            a_k = (a1 + a2) / 2
-        else:
-            a_k = t * a_k
-        goto.step2_ag
-
-    label.step4_ag
-    # 第四步
-    a2 = copy.deepcopy(a_k)
-    a_k = (a1 + a2) / 2
-    goto.step2_ag
-
+logger = logging.getLogger(__name__)
 def descent_by_general_inverse(X, L, D, gfunc):
     """ 方法b：使用广义逆计算D的特征值有负值情况下的下降方向
 
@@ -87,7 +41,7 @@ def descent_by_general_inverse(X, L, D, gfunc):
 
 def negative_condition(x, L, D, diff_function):
     # 特征值存在负数的情况
-    print("特征值存在负数的情况")
+    logger.info("特征值存在负数的情况")
     n = len(L)
     aT = []    # a是一个行数为n的列向量，要求转置
     i = 0
@@ -159,37 +113,31 @@ def Fletcher_Freeman(X, func, gfunc, hess_funct, hyper_parameters=None, search_m
         epsilon = hyper_parameters["epsilon"]
         max_epoch = hyper_parameters["max_epoch"]
     k = 0
+    func_values = [] #记录每一步的函数值，在GLL中有用
+    mk = 0 #GLL当中的mk初始值
+
     label .step2
     G = hess_funct(X)
-    
+    func_values.append(func(X))
     L, D, y = utils.Bunch_Parlett(G)
-    # print("BP 的 L是")
-    # L = L[y, :]
-    # L = L[:, y]
-    # print(L)
-    # print("BP 的 D是")
-    # D = D[y, :]
-    # D = D[:, y]
-    # print(D)
+    # logger.info("Dm is ")
+    # logger.info(D)
     # from scipy.linalg import ldl
-    # L, D, y  = ldl(np.array(G, dtype=float), lower=1)
-    
-    # print("LDLT 的 L是")
-    # print(L)
-    # print("LDLT 的 D是")
-    # print(D)
-    
+    # L, D, y = ldl(np.array(G, dtype=float), lower=1)
+    # logger.info("D is ")
+    # logger.info(Dm)
+
     n = len(X)
     # 根据D的特征值正负性的不同情况，分情况计算下降方向d
     eigenvalue, eigenvector = np.linalg.eig(D)
     
     # 特征值中有负值
     if np.any(eigenvalue < 0):
-        print("特征值中有负值")
+        logger.info("特征值中有负值")
         d = np.squeeze(descent_by_general_inverse(X, L, D, gfunc))
         
     elif np.any(eigenvalue == 0): # 特征值中既有正值又有零
-        print("特征值中既有正值又有零")
+        logger.info("特征值中既有正值又有零")
         d = descent_by_general_inverse(X, L, D, gfunc)
         if np.where(d != 0)[0].shape[0] == 0:
             G_modified = np.dot(np.dot(L, D), L.T)
@@ -202,7 +150,8 @@ def Fletcher_Freeman(X, func, gfunc, hess_funct, hyper_parameters=None, search_m
                     break
         
     else:
-        print("特征值全为正")
+        logger.info("特征值全为正")
+        
         G_modified = np.dot(np.dot(L, D), L.T)
         inv_hass = np.linalg.inv(G)
         # inv_hass = np.linalg.inv(G)
@@ -210,20 +159,22 @@ def Fletcher_Freeman(X, func, gfunc, hess_funct, hyper_parameters=None, search_m
     
     #求得下降方向之后，此后的步骤与GM稳定牛顿法无异
     if search_mode == "ELS":
-        print("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
+        logger.info("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
         [a, b] = ELS.retreat_method(func, X, d, hyper_parameters=hyper_parameters["ELS"]["retreat_method"] if hyper_parameters is not None else None) 
         alpha_star = ELS.golden_method(func, X, d, a, b, hyper_parameters=hyper_parameters["ELS"]["golden_method"] if hyper_parameters is not None else None) 
     elif search_mode == "ILS":
-        print("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
+        logger.info("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
         alpha_star = ILS.inexact_line_search(func, gfunc, X, d, hyper_parameters=hyper_parameters["ILS"] if hyper_parameters is not None else None) 
-        # alpha_star, tmp_fx_k = armijo_goldstein(X, func, gfunc, d, a=1e-6, p=0.1, t=2)
+    elif search_mode == "GLL":
+        logger.info("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
+        alpha_star, mk = GLL_search(func, gfunc, X, d, func_values, mk, hyper_parameters=hyper_parameters["GLL"] if hyper_parameters is not None else None) 
     else:
         raise ValueError("参数search_mode 必须从['ELS', 'ILS']当中选择")
 
     X_new = X + d * alpha_star
     func_X_new = func(X_new)
     if abs(func_X_new - func(X)) <= epsilon:
-        print("因为函数值下降在{epsilon}以内，迭代结束，迭代轮次{iter}，最终X={X}，最终函数值={func_X_new}".format(epsilon=epsilon, iter=k,X=X,func_X_new=func_X_new))
+        logger.info("因为函数值下降在{epsilon}以内，{mode}的FF方法，迭代结束，迭代轮次{iter}，最终X={X}，最终函数值={func_X_new}".format(epsilon=epsilon, mode=search_mode, iter=k,X=X,func_X_new=func_X_new))
         return X_new, func_X_new, k
     if k > max_epoch:
         raise Exception("超过最大迭代次数：{}".format(max_epoch))
@@ -240,7 +191,9 @@ if __name__ == '__main__':
     hess_wood_lists, symbols_wood_list = functions.hess_wood_expression()
     G_wood_partial = functools.partial(functions.G_wood, G_lists=hess_wood_lists, symbols_list=symbols_wood_list)
     
-    print("精确线搜索下的FF方法")
-    Fletcher_Freeman(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ELS')
-    print("非精确线搜索下的FF方法")
-    Fletcher_Freeman(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ILS')
+    # logger.info("精确线搜索下的FF方法")
+    # Fletcher_Freeman(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ELS')
+    # logger.info("非精确线搜索下的FF方法")
+    # Fletcher_Freeman(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ILS')
+    logger.info("GLL线搜索下的FF方法")
+    Fletcher_Freeman(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='GLL')

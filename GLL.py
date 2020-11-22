@@ -1,6 +1,6 @@
 from goto import with_goto
 
-def GLL_search(func, gfunc, X, d, hyper_parameters=None, M=10, a=0.5, sigma=0.5, rho=0.1):
+def GLL_search(func, gfunc, X, d, func_values, last_m, hyper_parameters=None, M=10, a=10**5, sigma=0.5, rho=0.5):
     """ 非单调线搜索GLL准则
 
     Args:
@@ -8,6 +8,8 @@ def GLL_search(func, gfunc, X, d, hyper_parameters=None, M=10, a=0.5, sigma=0.5,
         gfunc ([回调函数]): [目标函数的一阶导函数]
         X ([np.array]]): [初值点]
         d ([np.array]]): [下降方向]
+        func_values ([np.array]]): [之前步的函数值]
+        last_m ([int]]): [m(k-1)]
         hyper_parameters: (Dic): 超参数，超参数中包括：
             M (int, optional): [用于限制m(k)上限的参数]. Defaults to 10.
             a (int, optional): [初始步长]. Defaults to 0.5.
@@ -22,5 +24,14 @@ def GLL_search(func, gfunc, X, d, hyper_parameters=None, M=10, a=0.5, sigma=0.5,
         M = hyper_parameters["M"]
         a = hyper_parameters["a"]
         # alpha = hyper_parameters["alpha0"]
+    mk = min(last_m + 1, M) #原方法中是<=，如果是<=的话，mk怎么取
     f0, gf0 = func(X), gfunc(X)
     gkdk = gf0.dot(d)
+    max_fx = max(func_values[-mk:])
+    hk = 0
+    while True:
+        alpha = sigma ** hk * a
+        if func(X + alpha * d) <= max_fx + rho * alpha * gkdk:
+            return alpha, mk
+        else:
+            hk += 1

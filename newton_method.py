@@ -6,8 +6,12 @@ import inexact_line_search as ILS
 import utils
 import functools
 import copy
+from GLL import GLL_search
+import logging
+logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+                    datefmt='%d-%m-%Y:%H:%M:%S')
 
-
+logger = logging.getLogger(__name__)
 @with_goto
 def armijo_goldstein(x0, function, diff_function, descent, a=1e-6, p=0.1, t=5):
     # 输入：x0为当前迭代点
@@ -59,7 +63,7 @@ def armijo_goldstein(x0, function, diff_function, descent, a=1e-6, p=0.1, t=5):
 
 
 @with_goto
-def damp_newton(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="ELS", epsilon=1e-5, max_epoch=1000):
+def damp_newton(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="ELS", use_modified_Cholesky=True, epsilon=1e-5, max_epoch=1000):
     """[使用阻尼牛顿法极小值点
          d = -G_k^{-1} * g_k]
 
@@ -80,17 +84,28 @@ def damp_newton(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="
         search_mode = hyper_parameters["search_mode"]
         epsilon = hyper_parameters["epsilon"]
         max_epoch = hyper_parameters["max_epoch"]
+        use_modified_Cholesky = hyper_parameters["damp_newton"]["use_modified_Cholesky"]
 
     k = 1
+    func_values = [] #记录每一步的函数值，在GLL中有用
+    mk = 0 #GLL当中的mk初始值
     #计算下降方向d_k
     label .count_dk
     G = hess_funct(X)
     g = gfunc(X)
+    # 把当前函数值加入func_values
+    func_values.append(func(X))
     try:
-        inv_hass = np.linalg.inv(G)
-        d = -np.dot(inv_hass , g)
+        if use_modified_Cholesky:
+            L, D = utils.modified_Cholesky(G, hyper_parameters["modified_Cholesky"])
+            G_ = utils.get_modified_G(L, D)
+            inv_hass = np.linalg.inv(G_)
+            d = -np.dot(inv_hass , g)
+        else:
+            inv_hass = np.linalg.inv(G)
+            d = -np.dot(inv_hass , g)
     except:
-        print("Hessian 矩阵不可逆，用修正Cholesky分解求下降方向")
+        logger.info("Hessian 矩阵不可逆，用修正Cholesky分解求下降方向")
         L, D = utils.modified_Cholesky(G, hyper_parameters["modified_Cholesky"])
         G_ = utils.get_modified_G(L, D)
         inv_hass = np.linalg.inv(G_)
@@ -98,20 +113,23 @@ def damp_newton(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="
     
     #计算步长
     if search_mode == "ELS":
-        print("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
+        logger.info("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
         [a, b] = ELS.retreat_method(func, X, d, hyper_parameters=hyper_parameters["ELS"]["retreat_method"] if hyper_parameters is not None else None) 
         alpha_star = ELS.golden_method(func, X, d, a, b, hyper_parameters=hyper_parameters["ELS"]["golden_method"] if hyper_parameters is not None else None) 
     elif search_mode == "ILS":
-        print("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
-        alpha_star = armijo_goldstein(X, func, gfunc, d)
-        # alpha_star = ILS.inexact_line_search(func, gfunc, X, d, hyper_parameters=hyper_parameters["ILS"] if hyper_parameters is not None else None) 
+        logger.info("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
+        # alpha_star = armijo_goldstein(X, func, gfunc, d)
+        alpha_star = ILS.inexact_line_search(func, gfunc, X, d, hyper_parameters=hyper_parameters["ILS"] if hyper_parameters is not None else None) 
+    elif search_mode == "GLL":
+        logger.info("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
+        alpha_star, mk = GLL_search(func, gfunc, X, d, func_values, mk, hyper_parameters=hyper_parameters["GLL"] if hyper_parameters is not None else None) 
     else:
         raise ValueError("参数search_mode 必须从['ELS', 'ILS']当中选择")
     
     X_new = X + d * alpha_star
     func_X_new = func(X_new)
     if abs(func_X_new - func(X)) <= epsilon:
-        print("迭代结束，迭代轮次{iter}，最终X={X}，最终函数值={func_X_new}".format(iter=k, X=X,func_X_new=func_X_new))
+        logger.info("因为函数值下降在{epsilon}以内，{mode}的阻尼牛顿法，迭代结束，迭代轮次{iter}，最终X={X}，最终函数值={func_X_new}".format(epsilon=epsilon, mode=search_mode,iter=k, X=X,func_X_new=func_X_new))
         return X_new, func_X_new, k
     if k > max_epoch:
         raise Exception("超过最大迭代次数：%d", max_epoch)
@@ -177,11 +195,15 @@ def GM_newton(X, func, gfunc, hess_funct, hyper_parameters=None, zeta=1e-2, sear
         max_epoch = hyper_parameters["max_epoch"]
 
     k = 1
+    func_values = [] #记录每一步的函数值，在GLL中有用
+    mk = 0 #GLL当中的mk初始值
     assert epsilon > 0 , "must have epsilon > 0" 
     # 步2：计算g和G
     label .step2
     g = gfunc(X)
     G = hess_funct(X)
+    # 把当前函数值加入func_values
+    func_values.append(func(X))
     # 步3：对G进行修正Cholesky分解
     L, D = utils.modified_Cholesky(G)
     modified_G = utils.get_modified_G(L, D)
@@ -195,7 +217,7 @@ def GM_newton(X, func, gfunc, hess_funct, hyper_parameters=None, zeta=1e-2, sear
     E = modified_G - G
     d = negative_curvature(LT, D, E)
     if d == None:
-        print("因为负曲率方向不存在，迭代结束，迭代轮次{iter}，最终X={X}，最终函数值={func_X_new}".format(iter=k,X=X,func_X_new=func_X_new))
+        logger.info("因为负曲率方向不存在，{mode}的GM稳定牛顿法，迭代结束，迭代轮次{iter}，最终X={X}，最终函数值={func_X_new}".format(mode=search_mode,iter=k,X=X,func_X_new=func_X_new))
         return X, func(X), k
     else:
         gT = np.mat(g).T
@@ -204,19 +226,22 @@ def GM_newton(X, func, gfunc, hess_funct, hyper_parameters=None, zeta=1e-2, sear
     # 步6：线搜索求步长
     label .step6
     if search_mode == "ELS":
-        print("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
+        logger.info("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
         [a, b] = ELS.retreat_method(func, X, d, hyper_parameters=hyper_parameters["ELS"]["retreat_method"] if hyper_parameters is not None else None) 
         alpha_star = ELS.golden_method(func, X, d, a, b, hyper_parameters=hyper_parameters["ELS"]["golden_method"] if hyper_parameters is not None else None) 
     elif search_mode == "ILS":
-        print("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
+        logger.info("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
         alpha_star = ILS.inexact_line_search(func, gfunc, X, d, hyper_parameters=hyper_parameters["ILS"] if hyper_parameters is not None else None) 
+    elif search_mode == "GLL":
+        logger.info("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
+        alpha_star, mk = GLL_search(func, gfunc, X, d, func_values, mk, hyper_parameters=hyper_parameters["GLL"] if hyper_parameters is not None else None) 
     else:
         raise ValueError("参数search_mode 必须从['ELS', 'ILS']当中选择")
 
     X_new = X + d * alpha_star
     func_X_new = func(X_new)
     if abs(func_X_new - func(X)) <= epsilon:
-        print("因为函数值下降在{epsilon}以内，迭代结束，迭代轮次{iter}，最终X={X}，最终函数值={func_X_new}".format(epsilon=epsilon, iter=k,X=X,func_X_new=func_X_new))
+        logger.info("因为函数值下降在{epsilon}以内，{mode}的GM稳定牛顿法，迭代结束，迭代轮次{iter}，最终X={X}，最终函数值={func_X_new}".format(mode=search_mode,epsilon=epsilon, iter=k,X=X,func_X_new=func_X_new))
         return X_new, func_X_new, k
     if k > max_epoch:
         raise Exception("超过最大迭代次数：%d", max_epoch)
@@ -232,13 +257,18 @@ if __name__ == '__main__':
     g_wood_partial = functools.partial(functions.g_wood, diff_list=diff_wood_list, symbols_list=symbols_wood_list)
     hess_wood_lists, symbols_wood_list = functions.hess_wood_expression()
     G_wood_partial = functools.partial(functions.G_wood, G_lists=hess_wood_lists, symbols_list=symbols_wood_list)
-    print("精确线搜索下的阻尼牛顿法")
-    X_star, func_X_star, iter_num = damp_newton(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ELS')
-    # print("非精确线搜索下的阻尼牛顿法")
+    # logger.info("精确线搜索下的阻尼牛顿法")
+    # X_star, func_X_star, iter_num = damp_newton(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ELS')
+    # logger.info("非精确线搜索下的阻尼牛顿法")
     # X_star, func_X_star, iter_num = damp_newton(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ILS')
-    # print("精确线搜索下的GM稳定牛顿法")
+    logger.info("GLL线搜索下的阻尼牛顿法")
+    X_star, func_X_star, iter_num = damp_newton(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='GLL')
+    
+    # logger.info("精确线搜索下的GM稳定牛顿法")
     # X_star, func_X_star, iter_num = GM_newton(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ELS')
-    # print("非精确线搜索下的GM稳定牛顿法")
+    # logger.info("非精确线搜索下的GM稳定牛顿法")
     # X_star, func_X_star, iter_num = GM_newton(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='ILS')
- 
+    # logger.info("GLL线搜索下的GM稳定牛顿法")
+    # X_star, func_X_star, iter_num = GM_newton(x0, functions.wood, g_wood_partial, G_wood_partial, search_mode='GLL')
+
 

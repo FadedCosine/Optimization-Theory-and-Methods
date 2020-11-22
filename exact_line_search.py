@@ -41,7 +41,6 @@ def retreat_method(func, X, d, hyper_parameters=None, a0=1e-4, r=1e-5, t=1.5):
         #转步4
         goto .step4
         
-    
     #步3
     r = t * r
     alpha = a_pre
