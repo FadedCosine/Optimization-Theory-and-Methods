@@ -44,51 +44,22 @@ GM稳定牛顿法超参数：
     max_epoch： 最大允许的迭代次数
 
 """
-hyper_parameters = {
-    "ELS": {
-        "retreat_method": {
-            "r": 1e-10,
-            "t": 1.5,
-        },
-        "golden_method": {
-            "epsilon": 1e-5,
-        }
-    },
-    "ILS": {
-        "rho": 0.1,
-        "sigma": 0.4,
-        "t": 5,
-        "criterion": "Wolfe Powell"
-    },
-    "damp_newton": {
-        "use_modified_Cholesky" : True,
-    },
-    "GM_newton": {
-        "zeta": 1e-2,
-    },
-    "modified_Cholesky": {
-        "u": 1e-20,
-    },
-    "search_mode": "ELS",
-    "epsilon": 1e-8,
-    "max_epoch": 1000,
-}
-
-
+CRITERION = ["Armijo Goldstein", "Wolfe Powell", "Strong Wolfe Powell"]
+ILS_criterion = CRITERION[0]
 # logger.info("精确线搜索下的阻尼牛顿法") # 使用基本牛顿法的下降方向无法收敛，使用修正Cholesky分解的下降方向可以收敛
 ELS_damp_newton_hyper_parameters = {
     "ELS": {
         "retreat_method": {
-            "a0" : 0 ,
-            "r": 1e-10,
+            "a0" : 0,
+            "r": 1e-8,
             "t": 1.5,
         },
         "golden_method": {
-            "epsilon": 1e-8,
+            "epsilon": 1e-6,
         }
     },
     "damp_newton": {
-        "use_modified_Cholesky" : True,
+        "use_modified_Cholesky" : False,
     },
     "modified_Cholesky": {
         "u": 1e-20,
@@ -107,10 +78,10 @@ ILS_damp_newton_hyper_parameters = {
         "sigma": 0.5,
         "t": 5,
         "alpha0": 1e-8,
-        "criterion": "Armijo Goldstein"
+        "criterion": ILS_criterion
     },
     "damp_newton": {
-        "use_modified_Cholesky" : True,
+        "use_modified_Cholesky" : False,
     },
     "modified_Cholesky": {
             "u": 1e-20,
@@ -130,7 +101,7 @@ GLL_damp_newton_hyper_parameters = {
         "a": 1,
     },
     "damp_newton": {
-        "use_modified_Cholesky" : True,
+        "use_modified_Cholesky" : False,
     },
     "modified_Cholesky": {
         "u": 1e-20,
@@ -172,7 +143,7 @@ ILS_GM_newton_hyper_parameters = {
         "sigma": 0.5,
         "t": 5,
         "alpha0": 1e-8,
-        "criterion": "Armijo Goldstein"
+        "criterion": ILS_criterion
     },
     "GM_newton": {
         "zeta": 1e-8,
@@ -211,7 +182,7 @@ GLL_GM_newton_hyper_parameters = {
 ELS_FF_hyper_parameters = {
     "ELS": {
         "retreat_method": {
-            "a0": 0, 
+            "a0" : 0, 
             "r": 1e-10,
             "t": 1.5,
         },
@@ -231,7 +202,7 @@ ILS_FF_hyper_parameters = {
         "sigma": 0.4,
         "t": 5,
         "alpha0": 1e-6,
-        "criterion": "Armijo Goldstein"
+        "criterion": ILS_criterion
     },
     "search_mode": "ILS",
     "epsilon": 1e-8,
@@ -309,7 +280,7 @@ write_latex.write(" 阻尼牛顿法 & ELS & {fx} & {iter_num} & {func_k} & {is_c
     fx = format(func_X_star, ".4e"),
     iter_num = str(iter_num),
     func_k = str(function_num),
-    is_conv = "是" if func_X_star < 1e-6 else "否"
+    is_conv = "是" if func_X_star < 1e-5 else "否"
 ))
 logger.info("非精确线搜索下的阻尼牛顿法")
 X_star, func_X_star, iter_num, function_num = newton_method.damp_newton(x0, f_funciton, g_function, G_function, hyper_parameters=ILS_damp_newton_hyper_parameters)
@@ -317,7 +288,7 @@ write_latex.write(" 阻尼牛顿法 & ILS & {fx} & {iter_num} & {func_k} & {is_c
     fx = format(func_X_star, ".4e"),
     iter_num = str(iter_num),
     func_k = str(function_num),
-    is_conv = "是" if func_X_star < 1e-6 else "否"
+    is_conv = "是" if func_X_star < 1e-5 else "否"
 ))
 logger.info("GLL线搜索下的阻尼牛顿法")
 X_star, func_X_star, iter_num, function_num = newton_method.damp_newton(x0, f_funciton, g_function, G_function, hyper_parameters=GLL_damp_newton_hyper_parameters)
@@ -325,7 +296,7 @@ write_latex.write(" 阻尼牛顿法 & GLL & {fx} & {iter_num} & {func_k} & {is_c
     fx = format(func_X_star, ".4e"),
     iter_num = str(iter_num),
     func_k = str(function_num),
-    is_conv = "是" if func_X_star < 1e-6 else "否"
+    is_conv = "是" if func_X_star < 1e-5 else "否"
 ))
 write_latex.write("\hline\n")
 logger.info("精确线搜索下的GM稳定牛顿法") 
@@ -334,7 +305,7 @@ write_latex.write(" GM稳定牛顿法 & ELS & {fx} & {iter_num} & {func_k} & {is
     fx = format(func_X_star, ".4e"),
     iter_num = str(iter_num),
     func_k = str(function_num),
-    is_conv = "是" if func_X_star < 1e-6 else "否"
+    is_conv = "是" if func_X_star < 1e-5 else "否"
 ))
 logger.info("非精确线搜索下的GM稳定牛顿法")
 X_star, func_X_star, iter_num, function_num = newton_method.GM_newton(x0, f_funciton, g_function, G_function, hyper_parameters=ILS_GM_newton_hyper_parameters)
@@ -342,7 +313,7 @@ write_latex.write(" GM稳定牛顿法 & ILS & {fx} & {iter_num} & {func_k} & {is
     fx = format(func_X_star, ".4e"),
     iter_num = str(iter_num),
     func_k = str(function_num),
-    is_conv = "是" if func_X_star < 1e-6 else "否"
+    is_conv = "是" if func_X_star < 1e-5 else "否"
 ))
 logger.info("GLL线搜索下的GM牛顿法")
 X_star, func_X_star, iter_num, function_num = newton_method.GM_newton(x0, f_funciton, g_function, G_function, hyper_parameters=GLL_GM_newton_hyper_parameters)
@@ -350,7 +321,7 @@ write_latex.write(" GM稳定牛顿法 & GLL & {fx} & {iter_num} & {func_k} & {is
     fx = format(func_X_star, ".4e"),
     iter_num = str(iter_num),
     func_k = str(function_num),
-    is_conv = "是" if func_X_star < 1e-6 else "否"
+    is_conv = "是" if func_X_star < 1e-5 else "否"
 ))
 write_latex.write("\hline\n")
 logger.info("精确线搜索下的FF方法")
@@ -359,7 +330,7 @@ write_latex.write(" Fletcher-Freeman 方法 & ELS & {fx} & {iter_num} & {func_k}
     fx = format(func_X_star, ".4e"),
     iter_num = str(iter_num),
     func_k = str(function_num),
-    is_conv = "是" if func_X_star < 1e-6 else "否"
+    is_conv = "是" if func_X_star < 1e-5 else "否"
 ))
 logger.info("非精确线搜索下的FF方法")
 X_star, func_X_star, iter_num, function_num = FF.Fletcher_Freeman(x0, f_funciton, g_function, G_function, hyper_parameters=ILS_FF_hyper_parameters)
@@ -367,7 +338,7 @@ write_latex.write(" Fletcher-Freeman 方法 & ILS & {fx} & {iter_num} & {func_k}
     fx = format(func_X_star, ".4e"),
     iter_num = str(iter_num),
     func_k = str(function_num),
-    is_conv = "是" if func_X_star < 1e-6 else "否"
+    is_conv = "是" if func_X_star < 1e-5 else "否"
 ))
 logger.info("GLL线搜索下的FF方法")
 X_star, func_X_star, iter_num, function_num = FF.Fletcher_Freeman(x0, f_funciton, g_function, G_function, hyper_parameters=GLL_FF_hyper_parameters)
@@ -375,7 +346,7 @@ write_latex.write(" Fletcher-Freeman 方法 & GLL & {fx} & {iter_num} & {func_k}
     fx = format(func_X_star, ".4e"),
     iter_num = str(iter_num),
     func_k = str(function_num),
-    is_conv = "是" if func_X_star < 1e-6 else "否"
+    is_conv = "是" if func_X_star < 1e-5 else "否"
 ))
 write_latex.write("\hline\n")
 write_latex.close()

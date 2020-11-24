@@ -68,27 +68,15 @@ def Fletcher_Freeman(X, func, gfunc, hess_funct, hyper_parameters=None, search_m
      
     label .step2
     start_time = time.time()
-    # logging.info("开始计算hess矩阵")
     G = hess_funct(X)
-    # logging.info("计算hess矩阵完毕")
     function_k += 1
     F = func(X)
     func_values.append(F)
-    # logging.info("开始计算BP")
     L, D, y = utils.Bunch_Parlett(G)
     
-    # logger.info("Dm is ")
-    # logger.info(D)
-    # from scipy.linalg import ldl
-    # L, D, y = ldl(np.array(G, dtype=float), lower=1)
-    # logger.info("D is ")
-    # logger.info(Dm)
-
     n = len(X)
     # 根据D的特征值正负性的不同情况，分情况计算下降方向d
-    # logging.info("开始计算特征值")
     eigenvalue, eigenvector = np.linalg.eig(D)
-    # logging.info("开始判断特征值")
     # 特征值中有负值
     if np.any(eigenvalue < 0):
         logger.info("特征值中有负值")
@@ -138,7 +126,8 @@ def Fletcher_Freeman(X, func, gfunc, hess_funct, hyper_parameters=None, search_m
         logger.info("因为函数值下降在{epsilon}以内，{mode}的FF方法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终X={X}，最终函数值={func_X_new}".format(epsilon=epsilon, mode=search_mode, iter=k, func_k=function_k,X=X,func_X_new=func_X_new))
         return X_new, func_X_new, k, function_k
     if k > max_epoch:
-        raise Exception("超过最大迭代次数：{}".format(max_epoch))
+        logger.info("超过最大迭代次数：%d", max_epoch)
+        return X_new, func_X_new, k, function_k
     X = X_new
     k += 1
     goto .step2

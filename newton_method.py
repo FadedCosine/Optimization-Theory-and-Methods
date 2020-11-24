@@ -154,7 +154,8 @@ def damp_newton(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="
         logger.info("因为函数值下降在{epsilon}以内，{mode}的阻尼牛顿法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终X={X}，最终函数值={func_X_new}".format(epsilon=epsilon, mode=search_mode, iter=k, func_k=function_k, X=X,func_X_new=func_X_new))
         return X_new, func_X_new, k, function_k
     if k > max_epoch:
-        raise Exception("超过最大迭代次数：%d", max_epoch)
+        logger.info("超过最大迭代次数：%d", max_epoch)
+        return X_new, func_X_new, k, function_k
     X = X_new
     k += 1
     goto .count_dk
@@ -274,7 +275,8 @@ def GM_newton(X, func, gfunc, hess_funct, hyper_parameters=None, zeta=1e-2, sear
         logger.info("因为函数值下降在{epsilon}以内，{mode}的GM稳定牛顿法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终X={X}，最终函数值={func_X_new}".format(mode=search_mode,epsilon=epsilon, iter=k, func_k=function_k, X=X,func_X_new=func_X_new))
         return X_new, func_X_new, k, function_k
     if k > max_epoch:
-        raise Exception("超过最大迭代次数：%d", max_epoch)
+        logger.info("超过最大迭代次数：%d", max_epoch)
+        return X_new, func_X_new, k, function_k
     X = X_new
     k += 1
     goto .step2

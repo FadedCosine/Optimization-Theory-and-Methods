@@ -2,6 +2,11 @@ import numpy as np
 from goto import with_goto
 import copy
 import functions 
+import logging
+logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+                    datefmt='%d-%m-%Y:%H:%M:%S')
+
+logger = logging.getLogger(__name__)
 @with_goto
 def retreat_method(func, X, d, hyper_parameters=None, a0=1e-4, r=1e-5, t=1.5):
     """进退法确定初始步长搜索区间 《数值最优化方法》 高立著 p26
@@ -40,7 +45,7 @@ def retreat_method(func, X, d, hyper_parameters=None, a0=1e-4, r=1e-5, t=1.5):
     if func_pre <= func_cur:
         # 可能会存在两个方向均是不是下降方向的情况
         if just_change_direction_flag:
-            print("陷入鞍点")
+            logger.info("陷入鞍点")
             return a_pre, a_pre, func_k
         #转步4
         goto .step4
