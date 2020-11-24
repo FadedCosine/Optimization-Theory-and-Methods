@@ -24,20 +24,24 @@ def retreat_method(func, X, d, hyper_parameters=None, a0=1e-4, r=1e-5, t=1.5):
     alpha = a0
     a_pre = a0
     just_change_direction_flag = False
+    func_k = 1
+    func_pre = func(X + d * a_pre)
     #步2
     label .step2
- 
+    
     a_cur = a_pre + r
     
     if a_cur <= 0:
         a_cur = 0
         goto .step4
-   
-    if func(X + d * a_pre) <= func(X + d * a_cur):
+
+    func_k += 1
+    func_cur = func(X + d * a_cur)
+    if func_pre <= func_cur:
         # 可能会存在两个方向均是不是下降方向的情况
         if just_change_direction_flag:
             print("陷入鞍点")
-            return [a_pre, a_pre]
+            return a_pre, a_pre, func_k
         #转步4
         goto .step4
         
@@ -45,6 +49,7 @@ def retreat_method(func, X, d, hyper_parameters=None, a0=1e-4, r=1e-5, t=1.5):
     r = t * r
     alpha = a_pre
     a_pre = a_cur
+    func_pre = func_cur
     i += 1
     goto .step2
     
@@ -56,7 +61,7 @@ def retreat_method(func, X, d, hyper_parameters=None, a0=1e-4, r=1e-5, t=1.5):
         #转步2
         goto .step2
     else:
-        return [min(alpha, a_cur), max(alpha, a_cur)]
+        return min(alpha, a_cur), max(alpha, a_cur), func_k
 
 
 @with_goto
@@ -76,37 +81,41 @@ def golden_method(func, X, d, a0, b0, hyper_parameters=None, epsilon=1e-5, tau=0
     if hyper_parameters is not None:
         epsilon = hyper_parameters["epsilon"]
     if a0 == b0:
-        return a0
+        return a0, 0
     assert b0 > a0 and epsilon > 0, "must have b0 > a0, epsilon > 0"
     a, b = a0, b0
     #步1
     al = a + (1 - tau) * (b -a)
     ar = a + tau * (b - a)
+    func_k = 2
     f_al = func(X + d * al)
     f_ar = func(X + d * ar)
+    
     #步2
     label .step2
     if f_al <= f_ar:
         goto .step4
     #步3
     if b - al <= epsilon:
-        return ar
+        return ar, func_k
     else:
         a = al
         al = ar
         f_al = f_ar
         ar = a + tau * (b - a)
+        func_k += 1
         f_ar = func(X + d * ar)
         goto .step2
     #步4
     label .step4
     if ar - a <= epsilon:
-        return al
+        return al, func_k
     else:
         b = ar
         ar = al
         f_ar = f_al
         al = a + (1 - tau) * (b - a)
+        func_k += 1
         f_al = func(X + d * al)
         goto .step2
 

@@ -25,13 +25,15 @@ def GLL_search(func, gfunc, X, d, func_values, last_m, hyper_parameters=None, M=
         a = hyper_parameters["a"]
         # alpha = hyper_parameters["alpha0"]
     mk = min(last_m + 1, M) #原方法中是<=，如果是<=的话，mk怎么取
-    f0, gf0 = func(X), gfunc(X)
+    func_k = 0 # 函数调用次数
+    gf0 = gfunc(X)
     gkdk = gf0.dot(d)
     max_fx = max(func_values[-mk:])
     hk = 0
     while True:
         alpha = sigma ** hk * a
+        func_k += 1
         if func(X + alpha * d) <= max_fx + rho * alpha * gkdk:
-            return alpha, mk
+            return alpha, func_k, mk
         else:
             hk += 1

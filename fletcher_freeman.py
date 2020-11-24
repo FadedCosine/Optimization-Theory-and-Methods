@@ -8,6 +8,7 @@ import inexact_line_search as ILS
 import copy
 from GLL import GLL_search
 import logging
+import time
 
 logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
                     datefmt='%d-%m-%Y:%H:%M:%S')
@@ -38,58 +39,6 @@ def descent_by_general_inverse(X, L, D, gfunc):
     L_inverse = np.mat(np.linalg.inv(L))
     descent = -L_inverse.T * np.mat(D_plus) * L_inverse * gfunc(X).reshape(n, 1)
     return np.array(descent)
-
-def negative_condition(x, L, D, diff_function):
-    # 特征值存在负数的情况
-    logger.info("特征值存在负数的情况")
-    n = len(L)
-    aT = []    # a是一个行数为n的列向量，要求转置
-    i = 0
-    while i < n:
-        if i == n-1:
-            # 到了最后一个1*1主元的情况
-            if D[i][i] <= 0:
-                aT.append(1)
-            else:
-                aT.append(0)
-            i = i + 1
-            break
-        if D[i][i+1] == 0 and D[i+1][i] == 0:
-            # 1*1主元的情况
-            if D[i][i] <= 0:
-                aT.append(1)
-            else:
-                aT.append(0)
-            i = i + 1
-        else:
-            tmp_matrix = [[D[i][i], D[i][i+1]], [D[i+1][i], D[i+1][i+1]]]
-            value, array = np.linalg.eig(tmp_matrix)
-            value = value.tolist()
-            array = array.tolist()
-            for index, element in enumerate(value):
-                if element < 0:
-                    a_tmp = array[index]
-                    break
-            if len(a_tmp) != 2:
-                raise Exception("单位特征向量的维度不对！！！")
-            aT.append(a_tmp[0])
-            aT.append(a_tmp[1])
-            i = i + 2
-
-    a = np.mat(copy.deepcopy(aT))
-    a = a.T
-    LT = np.mat(copy.deepcopy(L))
-    LT = LT.T
-    LT_1 = np.linalg.inv(copy.deepcopy(LT))
-    t = np.dot(LT_1, a)
-
-    gkt = np.dot(diff_function(x), t)
-    if gkt <= 0:
-        descent = copy.deepcopy(t)
-    else:
-        descent = -copy.deepcopy(t)
-    descent = np.mat(descent).T    # 转置为行向量
-    return descent
     
 @with_goto
 def Fletcher_Freeman(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="ELS", epsilon=1e-5, max_epoch=1000):
@@ -113,13 +62,21 @@ def Fletcher_Freeman(X, func, gfunc, hess_funct, hyper_parameters=None, search_m
         epsilon = hyper_parameters["epsilon"]
         max_epoch = hyper_parameters["max_epoch"]
     k = 0
+    function_k = 0
     func_values = [] #记录每一步的函数值，在GLL中有用
     mk = 0 #GLL当中的mk初始值
-
+     
     label .step2
+    start_time = time.time()
+    # logging.info("开始计算hess矩阵")
     G = hess_funct(X)
-    func_values.append(func(X))
+    # logging.info("计算hess矩阵完毕")
+    function_k += 1
+    F = func(X)
+    func_values.append(F)
+    # logging.info("开始计算BP")
     L, D, y = utils.Bunch_Parlett(G)
+    
     # logger.info("Dm is ")
     # logger.info(D)
     # from scipy.linalg import ldl
@@ -129,8 +86,9 @@ def Fletcher_Freeman(X, func, gfunc, hess_funct, hyper_parameters=None, search_m
 
     n = len(X)
     # 根据D的特征值正负性的不同情况，分情况计算下降方向d
+    # logging.info("开始计算特征值")
     eigenvalue, eigenvector = np.linalg.eig(D)
-    
+    # logging.info("开始判断特征值")
     # 特征值中有负值
     if np.any(eigenvalue < 0):
         logger.info("特征值中有负值")
@@ -159,23 +117,26 @@ def Fletcher_Freeman(X, func, gfunc, hess_funct, hyper_parameters=None, search_m
     
     #求得下降方向之后，此后的步骤与GM稳定牛顿法无异
     if search_mode == "ELS":
-        logger.info("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
-        [a, b] = ELS.retreat_method(func, X, d, hyper_parameters=hyper_parameters["ELS"]["retreat_method"] if hyper_parameters is not None else None) 
-        alpha_star = ELS.golden_method(func, X, d, a, b, hyper_parameters=hyper_parameters["ELS"]["golden_method"] if hyper_parameters is not None else None) 
+        logger.info("迭代第{iter}轮，当前函数调用次数{func_k}，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,func_k=function_k,X=X,d=d,func_x=round(F, 8)))
+        a, b, add_retreat_func = ELS.retreat_method(func, X, d, hyper_parameters=hyper_parameters["ELS"]["retreat_method"] if hyper_parameters is not None else None) 
+        alpha_star, add_golden_func = ELS.golden_method(func, X, d, a, b, hyper_parameters=hyper_parameters["ELS"]["golden_method"] if hyper_parameters is not None else None) 
+        add_func_k = add_retreat_func + add_golden_func
     elif search_mode == "ILS":
-        logger.info("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
-        alpha_star = ILS.inexact_line_search(func, gfunc, X, d, hyper_parameters=hyper_parameters["ILS"] if hyper_parameters is not None else None) 
+        logger.info("迭代第{iter}轮，当前函数调用次数{func_k}，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,func_k=function_k,X=X,d=d,func_x=round(F, 8)))
+        alpha_star, add_func_k = ILS.inexact_line_search(func, gfunc, X, d, hyper_parameters=hyper_parameters["ILS"] if hyper_parameters is not None else None) 
     elif search_mode == "GLL":
-        logger.info("迭代第{iter}轮，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,X=X,d=d,func_x=round(func(X), 5)))
-        alpha_star, mk = GLL_search(func, gfunc, X, d, func_values, mk, hyper_parameters=hyper_parameters["GLL"] if hyper_parameters is not None else None) 
+        logger.info("迭代第{iter}轮，当前函数调用次数{func_k}，当前X取值为{X}，下降方向为{d}，当前函数值为{func_x}".format(iter=k,func_k=function_k,X=X,d=d,func_x=round(F, 8)))
+        alpha_star, add_func_k, mk = GLL_search(func, gfunc, X, d, func_values, mk, hyper_parameters=hyper_parameters["GLL"] if hyper_parameters is not None else None) 
+        
     else:
         raise ValueError("参数search_mode 必须从['ELS', 'ILS']当中选择")
-
+    # logging.info("线搜索结束")
     X_new = X + d * alpha_star
+    function_k = function_k + add_func_k + 1
     func_X_new = func(X_new)
     if abs(func_X_new - func(X)) <= epsilon:
-        logger.info("因为函数值下降在{epsilon}以内，{mode}的FF方法，迭代结束，迭代轮次{iter}，最终X={X}，最终函数值={func_X_new}".format(epsilon=epsilon, mode=search_mode, iter=k,X=X,func_X_new=func_X_new))
-        return X_new, func_X_new, k
+        logger.info("因为函数值下降在{epsilon}以内，{mode}的FF方法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终X={X}，最终函数值={func_X_new}".format(epsilon=epsilon, mode=search_mode, iter=k, func_k=function_k,X=X,func_X_new=func_X_new))
+        return X_new, func_X_new, k, function_k
     if k > max_epoch:
         raise Exception("超过最大迭代次数：{}".format(max_epoch))
     X = X_new

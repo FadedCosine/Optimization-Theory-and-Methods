@@ -36,17 +36,25 @@ def inexact_line_search(func, gfunc, X, d, hyper_parameters=None, rho=0.1, sigma
     #     alpha0 = (start + end) / 2   # save initial point
     
     # reduce unnecessary caculations in loop
+    func_k = 1
     f0, gf0 = func(X), gfunc(X)
     # gf0 must be a numpy array
     gkdk = gf0.dot(d)
     wolfe_boundary = sigma * gkdk
     strong_wolfe_boundary = sigma * abs(gkdk)
-
     iter_num = 0
     while True:
+        func_k += 1
+        fAlpha, gfAlpha = func(X + alpha * d), gfunc(X + alpha * d)
+        # print("start is {}".format(start))
+        # print("end is {}".format(end))
+        # print("alpha is {}".format(alpha))
+        if abs(start - end) < 1e-15:
+            alpha_star = alpha
+            min_value = fAlpha
+            break
         armijo_boundary = f0 + rho * gkdk * alpha
         goldstein_boundary = f0 + (1 - rho) * gkdk * alpha
-        fAlpha, gfAlpha = func(X + alpha * d), gfunc(X + alpha * d)
         gkAlpha_dk = gfAlpha.dot(d)
         # different criterions have same condition1 to avoid too large alpha
         armijo_condition = (fAlpha <= armijo_boundary)
@@ -83,7 +91,7 @@ def inexact_line_search(func, gfunc, X, d, hyper_parameters=None, rho=0.1, sigma
         print("初始点函数值：%.2f" % (f0))
         print("停止步长：%.4f; 停止点函数值：%.4f; 迭代次数：%d" % (alpha_star, min_value, iter_num))
 
-    return alpha_star
+    return alpha_star, func_k
 
 def test():
     x0 = np.array([-3, -1, -3, -1])
