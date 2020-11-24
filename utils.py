@@ -132,9 +132,6 @@ def Bunch_Parlett(A):
     # 步6：2*2 的块
     label .step6
     # 因为l > s，所有l行放在m+1行，l列放在m+1列，s行放在m行，s列放在m列
-    # print("第{k}步是 2 * 2的块:".format(k=k))
-    # print("第{k}步最初的A:".format(k=k))
-    # print(A_)
     # 注意当m+1 == s的时候，直接用一行内写交换行列的代码可能会存在问题,所以一定要先写交换 行m和行s的代码
     A_[[m, s], :] = A_[[s, m], :]
     A_[[m + 1, l], :] = A_[[l, m+1], :]

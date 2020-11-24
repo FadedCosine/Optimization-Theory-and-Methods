@@ -18,7 +18,8 @@
 ```
 
 ### 运行步骤
-main.py文件中包括了所有数值实验的代码，参数 --m 指定参数函数的维度（仅对Extended Powell singular function和Trigonometric function有效），--test_fucntion 指定测试函数（从["Wood", "EPS", "Trig"]中选择）
+main.py文件中包括了所有数值实验的代码，可以总结运行main.py，
+参数 --m 指定参数函数的维度（仅对Extended Powell singular function和Trigonometric function有效），--test_fucntion 指定测试函数（从["Wood", "EPS", "Trig"]中选择）
 
 如：
 ```python
