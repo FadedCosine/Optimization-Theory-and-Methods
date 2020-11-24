@@ -46,9 +46,6 @@ def inexact_line_search(func, gfunc, X, d, hyper_parameters=None, rho=0.1, sigma
     while True:
         func_k += 1
         fAlpha, gfAlpha = func(X + alpha * d), gfunc(X + alpha * d)
-        # print("start is {}".format(start))
-        # print("end is {}".format(end))
-        # print("alpha is {}".format(alpha))
         if abs(start - end) < 1e-15:
             alpha_star = alpha
             min_value = fAlpha
