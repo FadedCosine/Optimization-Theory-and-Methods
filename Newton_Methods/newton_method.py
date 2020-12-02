@@ -1,16 +1,16 @@
 import functions
 import numpy as np
 from goto import with_goto
-import exact_line_search as ELS
-import inexact_line_search as ILS
+import Line_Search.exact_line_search as ELS
+import Line_Search.inexact_line_search as ILS
+from Line_Search.GLL import GLL_search
 import utils
 import functools
 import copy
-from GLL import GLL_search
 import logging
 logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
                     datefmt='%d-%m-%Y:%H:%M:%S')
-
+logging.getLogger().setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 

@@ -11,7 +11,6 @@ def wood(X):
     """[wood function]
     Args:
         X ([np.array]): Input X
-
     Returns:
         [float]: funciton values
     """    

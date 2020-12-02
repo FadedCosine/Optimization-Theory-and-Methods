@@ -3,12 +3,12 @@ import utils
 import numpy as np
 import functions
 import functools
-import exact_line_search as ELS
-import inexact_line_search as ILS
-import copy
-from GLL import GLL_search
+import Line_Search.exact_line_search as ELS
+import Line_Search.inexact_line_search as ILS
+from Line_Search.GLL import GLL_search
 import logging
 import time
+import copy
 
 logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
                     datefmt='%d-%m-%Y:%H:%M:%S')

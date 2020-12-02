@@ -1,8 +1,6 @@
 import functions
-import exact_line_search as ELS
-import inexact_line_search as ILS
-import fletcher_freeman as FF
-import newton_method 
+import Newton_Methods.fletcher_freeman as FF
+import Newton_Methods.newton_method as newton_method
 import utils
 import numpy as np
 import functools
