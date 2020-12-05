@@ -67,7 +67,7 @@ def Fletcher_Freeman(X, func, gfunc, hess_funct, hyper_parameters=None, search_m
     mk = 0 #GLL当中的mk初始值
      
     label .step2
-    start_time = time.time()
+    
     G = hess_funct(X)
     function_k += 1
     F = func(X)

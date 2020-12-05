@@ -259,16 +259,15 @@ else:
     hess_wood_lists, symbols_wood_list = functions.hess_wood_expression()
     G_function = functools.partial(functions.G_wood, G_lists=hess_wood_lists, symbols_list=symbols_wood_list)
     write_latex_name = "Wood.txt"
-
-
    
-results = []
-pool = multiprocessing.Pool(processes=len(hyper_parameters_list))
+# results = []
+# pool = multiprocessing.Pool(processes=len(hyper_parameters_list))
 
-for method_idx in range(len(hyper_parameters_list)):
-    results.append([pool.apply_async(method_list[method_idx], (x0, f_funciton, g_function, G_function, hyper_parameters_list[method_idx], ))])
-pool.close()
-pool.join()
+# for method_idx in range(len(hyper_parameters_list)):
+#     results.append([pool.apply_async(method_list[method_idx], (x0, f_funciton, g_function, G_function, hyper_parameters_list[method_idx], ))])
+# pool.close()
+# pool.join()
+
 logger.info("== " * 20 + " {} ".format(write_latex_name) + "== " * 20)
 write_latex = open(write_latex_name, 'w')
 write_latex.write("\hline\n")

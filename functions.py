@@ -279,14 +279,150 @@ def G_function(X, G_lists=None, symbols_list=None):
     if G_lists is not None:
         return np.array([[G_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_list, X)]) for G_xi in G_list] for G_list in G_lists], 'float')
 
+class Penalty1:
+    """
+    重构代码，把同一个测试方程的func，gfunc，hess_funct归为一个类
+    """
+    def __init__(self, n, a=1e-5):
+        self.n = n
+        self.m = n + 1
+        self.a = a
+    def func(self, X):
+        """Penalty1 的函数
+
+        Args:
+            X ([np.array]): 要求输入是numpy.array，方便进行矩阵运算
+        """
+        X = X.reshape(-1,1)
+        one_col = np.ones((self.n, 1))
+        return self.a * np.matmul((X - one_col).T, X - one_col) + (np.matmul(X.T, X) - 1/4) ** 2
+    def gfunc(self, X):
+        X = X.reshape(-1,1)
+        one_col = np.ones((self.n, 1))
+        g = 2 * self.a * (X - one_col) + 4 * (np.matmul(X.T, X) - 1/4) * X
+        return g.reshape(self.n)
+    def hess_funct(self, X):
+        X = X.reshape(-1,1)
+        E = np.identity(self.n)
+        one_col = np.ones((self.n, 1))
+        G = 2 * self.a * E + 4 * (np.matmul(X.T, X) - 1 /4) * E + 8 * np.matmul(X, X.T)
+        return G
+
+class Extended_Freudenstein_Roth:
+    def __init__(self, n):
+        self.n = n
+        self.m = n - 1
+    def func(self, X):
+        f = 0
+        for i in range(self.m):
+            f += ((X[i] + X[i+1] * ((5 - X[i+1]) * X[i+1] - 2) - 13) ** 2 + (X[i] + X[i+1] * ((X[i+1] + 1) * X[i+1] - 14) - 29) ** 2)
+        return f
+    def gfunc(self, X):
+        g = np.zeros(self.n)
+        g[0] = 4 * X[0] + 12 * X[1] ** 2 - 32 * X[1] - 84
+        g[self.n - 1] = (-6 * X[self.n - 1] ** 2 + 20 * X[self.n - 1] - 4) * (X[self.n - 2] - X[self.n - 1] ** 3 + 5 * X[self.n - 1] ** 2 - 2 * X[self.n - 1] - 13) + \
+                        (6 * X[self.n - 1] ** 2 + 4 * X[self.n - 1] - 28) * (X[self.n - 2] + X[self.n - 1] ** 3 + X[self.n - 1] ** 2 - 14 * X[self.n - 1] - 29)
+        for i in range(1, self.n - 1):
+            g[i] = 4 * X[i] + 12 * X[i+1] ** 2 - 32 * X[i+1] + (-6 * X[i] ** 2 + 20 * X[i] - 4) * (X[i-1] - X[i] ** 3 + 5 * X[i] ** 2 - 2 * X[i] -13) + \
+                        (6 * X[i] ** 2 + 4 * X[i] - 28) * (X[i-1] + X[i] ** 3 + X[i] ** 2 - 14 * X[i] -29) - 84
+        return g
+    def hess_func(self, X):
+        G = np.zeros((self.n, self.n))
+        G[0][0] = 4
+        G[self.n - 1][self.n - 1] = (20 - 12*X[self.n - 1] )*(X[self.n - 2]  - X[self.n - 1] **3 + 5*X[self.n - 1] **2 - 2*X[self.n - 1]  - 13) + \
+            (12*X[self.n - 1]  + 4)*(X[self.n - 2]  + X[self.n - 1] **3 + X[self.n - 1] **2 - 14*X[self.n - 1]  - 29) + \
+                (-6*X[self.n - 1] **2 + 20*X[self.n - 1]  - 4)*(-3*X[self.n - 1] **2 + 10*X[self.n - 1]  - 2) + (3*X[self.n - 1] **2 + 2*X[self.n - 1]  - 14)*(6*X[self.n - 1] **2 + 4*X[self.n - 1]  - 28)
+
+        for i in range(self.n - 1):
+            G[i][i + 1] = 24*X[i+1] - 32
+            G[i + 1][i] = G[i][i + 1]
+        for i in range(1, self.n - 1):
+            G[i][i] = (20 - 12*X[i] )*(X[i-1]  - X[i] **3 + 5*X[i] **2 - 2*X[i]  - 13) + (12*X[i]  + 4)*(X[i-1]  + X[i] **3 + X[i] **2 - 14*X[i]  - 29) + \
+                (-6*X[i] **2 + 20*X[i]  - 4)*(-3*X[i] **2 + 10*X[i]  - 2) + (3*X[i] **2 + 2*X[i]  - 14)*(6*X[i] **2 + 4*X[i]  - 28) + 4
+        return G
+
+class Extended_Rosenbrock:
+    def __init__(self, n):
+        assert n % 2 == 0, "n must be even"
+        self.n = n
+        self.m = n
+    def func(self, X):
+        t = np.array(range(int(self.n / 2)))
+        f = np.zeros(self.n)
+        f[2 * t] = 100 * (X[2 * t + 1] - X[2 * t] ** 2) ** 2
+        f[2 * t + 1] = (1 - X[2 * t]) ** 2
+        return np.sum(f)
+
+    def gfunc(self, X):
+        t = np.array(range(int(self.n / 2)))
+        g = np.zeros(self.n)
+        g[2 * t] = 400 * (X[2 * t] ** 2 - X[2 * t + 1]) * X[2 * t] + 2 * (X[2 * t] - 1)
+        g[2 * t + 1] = -200 * (X[2 * t] ** 2 - X[2 * t + 1])
+        return g
+
+    def hess_func(self, X):
+        G = np.zeros((self.n, self.n))
+        for i in range(int(self.n / 2)):
+            G[2 * i][2 * i] = 1200 * X[2 * i] ** 2 - 400 * X[2 * i + 1] + 2
+            G[2 * i + 1][2 * i + 1] = 200
+            G[2 * i + 1][2 * i] = -400 * X[2 * i]
+            G[2 * i][2 * i + 1] = G[2 * i + 1][2 * i]
+        return G
+
+def diff_penalty1(n, a=1e-5):
+    """[penalty1 函数的导函数]
+    Args:
+        n ([int]): X的维度
+    """
+    symbols_X = symbols("x:{}".format(n))
+    sum_1 = a * sum(((x - 1) ** 2 for x in symbols_X) )
+    penalty_func = sum_1 + (sum((x ** 2 for x in symbols_X)) - 1 /4) ** 2
+    diff_list = []
+    for symbol in symbols_X:
+        diff_list.append(diff(penalty_func, symbol))
+    return diff_list, symbols_X
+
+def diff_EFR(n):
+    """[Extended_Freudenstein_Roth 函数的导函数]
+    Args:
+        n ([int]): X的维度
+    """
+    symbols_X = symbols("x:{}".format(n))
+    f = 0
+    for i in range(n - 1):
+        f += ((symbols_X[i] + 5 * (symbols_X[i+1] ** 2) - symbols_X[i+1] ** 3 - 2 * symbols_X[i+1] - 13) ** 2 + \
+            (symbols_X[i] + symbols_X[i+1] ** 3 + symbols_X[i+1] ** 2 - 14 * symbols_X[i+1] - 29) ** 2)
+
+    diff_list = []
+    for symbol in symbols_X:
+        diff_list.append(diff(f, symbol))
+    return diff_list, symbols_X
+
+def diff_ER(n):
+    """[Extended_Rosenbrock 函数的导函数]
+    Args:
+        n ([int]): X的维度
+    """
+    symbols_X = symbols("x:{}".format(n))
+    f = 0
+    for i in range(int(n / 2)):
+        f += (100 * (symbols_X[2 * i + 1] - symbols_X[2 * i] ** 2) ** 2)
+        f += (1 - symbols_X[2 * i]) ** 2
+
+    diff_list = []
+    for symbol in symbols_X:
+        diff_list.append(diff(f, symbol))
+    return diff_list, symbols_X
+
+
 def test():
     
     # x0 = np.array([-3, -1, -3, -1])
     # diff_wood_list, symbols_wood_list = diff_wood()
     # print(g_wood(x0, diff_wood_list, symbols_wood_list))
-    for m in [4, 8, 12 ,16, 20]:
-        x0 = np.array([1 / m] * m)
-        diff_list, symbols_list = diff_extended_powell_singular(m)
+    # for m in [4, 8, 12 ,16, 20]:
+    #     x0 = np.array([1 / m] * m)
+    #     diff_list, symbols_list = diff_extended_powell_singular(m)
         # G, symbols_list = hess_expression(m, diff_list, symbols_list)
         # with open("cached_expression/g_extended_powell_singular_{m}.pkl".format(m=m), 'wb') as writer:
         #     pickle.dump(diff_list, writer)
@@ -299,8 +435,8 @@ def test():
         # print(g_EPS(x0))
         # if np.any(G_function(x0, G_lists=G, symbols_list=symbols_list)==G_EPS(x0)):
         #     print("{m} Right".format(m=m))
-        if np.any(g_function(x0, diff_list=diff_list, symbols_list=symbols_list)==g_EPS(x0)):
-            print("{m} Right".format(m=m))
+        # if np.any(g_function(x0, diff_list=diff_list, symbols_list=symbols_list)==g_EPS(x0)):
+        #     print("{m} Right".format(m=m))
 
        
     # for m in [20, 40, 60, 80 ,100]:
@@ -316,15 +452,35 @@ def test():
         
     #     print(g_function(x0, diff_list=diff_list, symbols_list=symbols_list))
         # print(G_function(x0, G_lists=G, symbols_list=symbols_list))
-    # for m in [4]:
-    #     x0 = np.array([1 / m] * m)
-    #     # print(trigonometric(x0))
-    #     diff_list, symbols_list = diff_trigonometric(m)
-    #     G, symbols_list = hess_expression(m, diff_list, symbols_list)
-    #     print(g_function(x0, diff_list=diff_list, symbols_list=symbols_list))
-    #     print(g_trigonometric(x0))
+    for n in [100]:
+        # x0 = np.array(range(1, n+1))
+        x0 = np.ones(n)
+        t = np.array(range(int(n / 2)))
+        x0[2 * t] = -1.2
+        x0[2 * t + 1] = 1
+        penalty1 = Penalty1(n)
+        # print(penalty1.func(x0))
+        # print(penalty1.gfunc(x0))
+        EFR = Extended_Freudenstein_Roth(n)
+        ER = Extended_Rosenbrock(n)
+        print(ER.func(x0))
+        print(ER.gfunc(x0))
+        print(ER.hess_func(x0))
+
+        # diff_list, symbols_list = diff_ER(n)
+        # G, symbols_list = hess_expression(n, diff_list, symbols_list)
+
+        # print(g_function(x0, diff_list=diff_list, symbols_list=symbols_list))
         # print(G_function(x0, G_lists=G, symbols_list=symbols_list))
-        # print(G_trigonometric(x0))
+
+        # for symbol, diff in zip(symbols_list, diff_list):
+        #     print(symbol, diff)
+        # for i in range(n):
+        #     for j in range(n):
+        #         print(symbols_list[i], symbols_list[j], G[i][j])
+        
+
+        
         
 
 def main():
