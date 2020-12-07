@@ -122,7 +122,7 @@ def Fletcher_Freeman(X, func, gfunc, hess_funct, hyper_parameters=None, search_m
     X_new = X + d * alpha_star
     function_k = function_k + add_func_k + 1
     func_X_new = func(X_new)
-    if abs(func_X_new - func(X)) <= epsilon:
+    if abs(func_X_new - F) <= epsilon:
         logger.info("因为函数值下降在{epsilon}以内，{mode}的FF方法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终X={X}，最终函数值={func_X_new}".format(epsilon=epsilon, mode=search_mode, iter=k, func_k=function_k,X=X,func_X_new=func_X_new))
         return X_new, func_X_new, k, function_k
     if k > max_epoch:

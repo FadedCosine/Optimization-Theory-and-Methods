@@ -281,7 +281,7 @@ def G_function(X, G_lists=None, symbols_list=None):
 
 class Penalty1:
     """
-    重构代码，把同一个测试方程的func，gfunc，hess_funct归为一个类
+    重构代码，把同一个测试方程的func，gfunc，hess_func归为一个类
     """
     def __init__(self, n, a=1e-5):
         self.n = n
@@ -295,13 +295,13 @@ class Penalty1:
         """
         X = X.reshape(-1,1)
         one_col = np.ones((self.n, 1))
-        return self.a * np.matmul((X - one_col).T, X - one_col) + (np.matmul(X.T, X) - 1/4) ** 2
+        return (self.a * np.matmul((X - one_col).T, X - one_col) + (np.matmul(X.T, X) - 1/4) ** 2)[0][0]
     def gfunc(self, X):
         X = X.reshape(-1,1)
         one_col = np.ones((self.n, 1))
         g = 2 * self.a * (X - one_col) + 4 * (np.matmul(X.T, X) - 1/4) * X
         return g.reshape(self.n)
-    def hess_funct(self, X):
+    def hess_func(self, X):
         X = X.reshape(-1,1)
         E = np.identity(self.n)
         one_col = np.ones((self.n, 1))
@@ -310,35 +310,51 @@ class Penalty1:
 
 class Extended_Freudenstein_Roth:
     def __init__(self, n):
+        assert n % 2 == 0, "n must be even"
         self.n = n
         self.m = n - 1
     def func(self, X):
         f = 0
-        for i in range(self.m):
-            f += ((X[i] + X[i+1] * ((5 - X[i+1]) * X[i+1] - 2) - 13) ** 2 + (X[i] + X[i+1] * ((X[i+1] + 1) * X[i+1] - 14) - 29) ** 2)
+        # for i in range(self.m):
+        #     f += ((X[i] + X[i+1] * ((5 - X[i+1]) * X[i+1] - 2) - 13) ** 2 + (X[i] + X[i+1] * ((X[i+1] + 1) * X[i+1] - 14) - 29) ** 2)
+        for i in range(int(self.n / 2)):
+            f += ((X[2 * i] + X[2*i + 1] * ((5 - X[2*i+1]) * X[2*i+1] - 2) - 13) ** 2 + (X[2*i] + X[2*i+1] * ((X[2*i+1] + 1) * X[2*i+1] - 14) - 29) ** 2)
         return f
     def gfunc(self, X):
         g = np.zeros(self.n)
-        g[0] = 4 * X[0] + 12 * X[1] ** 2 - 32 * X[1] - 84
-        g[self.n - 1] = (-6 * X[self.n - 1] ** 2 + 20 * X[self.n - 1] - 4) * (X[self.n - 2] - X[self.n - 1] ** 3 + 5 * X[self.n - 1] ** 2 - 2 * X[self.n - 1] - 13) + \
-                        (6 * X[self.n - 1] ** 2 + 4 * X[self.n - 1] - 28) * (X[self.n - 2] + X[self.n - 1] ** 3 + X[self.n - 1] ** 2 - 14 * X[self.n - 1] - 29)
-        for i in range(1, self.n - 1):
-            g[i] = 4 * X[i] + 12 * X[i+1] ** 2 - 32 * X[i+1] + (-6 * X[i] ** 2 + 20 * X[i] - 4) * (X[i-1] - X[i] ** 3 + 5 * X[i] ** 2 - 2 * X[i] -13) + \
-                        (6 * X[i] ** 2 + 4 * X[i] - 28) * (X[i-1] + X[i] ** 3 + X[i] ** 2 - 14 * X[i] -29) - 84
+        # g[0] = 4 * X[0] + 12 * X[1] ** 2 - 32 * X[1] - 84
+        # g[self.n - 1] = (-6 * X[self.n - 1] ** 2 + 20 * X[self.n - 1] - 4) * (X[self.n - 2] - X[self.n - 1] ** 3 + 5 * X[self.n - 1] ** 2 - 2 * X[self.n - 1] - 13) + \
+        #                 (6 * X[self.n - 1] ** 2 + 4 * X[self.n - 1] - 28) * (X[self.n - 2] + X[self.n - 1] ** 3 + X[self.n - 1] ** 2 - 14 * X[self.n - 1] - 29)
+        # for i in range(1, self.n - 1):
+        #     g[i] = 4 * X[i] + 12 * X[i+1] ** 2 - 32 * X[i+1] + (-6 * X[i] ** 2 + 20 * X[i] - 4) * (X[i-1] - X[i] ** 3 + 5 * X[i] ** 2 - 2 * X[i] -13) + \
+        #                 (6 * X[i] ** 2 + 4 * X[i] - 28) * (X[i-1] + X[i] ** 3 + X[i] ** 2 - 14 * X[i] -29) - 84
+        
+        for i in range(int(self.n / 2)):
+            g[2 * i] = 4 * X[2 * i] + 12 * X[2 * i + 1] ** 2 - 32 * X[2 * i + 1] - 84
+           
+            g[2 * i + 1] = (-6*X[2 * i + 1]**2 + 20*X[2 * i + 1] - 4)*(X[2 * i] - X[2 * i + 1]**3 + 5*X[2 * i + 1]**2 - 2*X[2 * i + 1] - 13) + (6*X[2 * i + 1]**2 + 4*X[2 * i + 1] - 28)*(X[2 * i] + X[2 * i + 1]**3 + X[2 * i + 1]**2 - 14*X[2 * i + 1] - 29)
         return g
     def hess_func(self, X):
         G = np.zeros((self.n, self.n))
-        G[0][0] = 4
-        G[self.n - 1][self.n - 1] = (20 - 12*X[self.n - 1] )*(X[self.n - 2]  - X[self.n - 1] **3 + 5*X[self.n - 1] **2 - 2*X[self.n - 1]  - 13) + \
-            (12*X[self.n - 1]  + 4)*(X[self.n - 2]  + X[self.n - 1] **3 + X[self.n - 1] **2 - 14*X[self.n - 1]  - 29) + \
-                (-6*X[self.n - 1] **2 + 20*X[self.n - 1]  - 4)*(-3*X[self.n - 1] **2 + 10*X[self.n - 1]  - 2) + (3*X[self.n - 1] **2 + 2*X[self.n - 1]  - 14)*(6*X[self.n - 1] **2 + 4*X[self.n - 1]  - 28)
+        # G[0][0] = 4
+        # G[self.n - 1][self.n - 1] = (20 - 12*X[self.n - 1] )*(X[self.n - 2]  - X[self.n - 1] **3 + 5*X[self.n - 1] **2 - 2*X[self.n - 1]  - 13) + \
+        #     (12*X[self.n - 1]  + 4)*(X[self.n - 2]  + X[self.n - 1] **3 + X[self.n - 1] **2 - 14*X[self.n - 1]  - 29) + \
+        #         (-6*X[self.n - 1] **2 + 20*X[self.n - 1]  - 4)*(-3*X[self.n - 1] **2 + 10*X[self.n - 1]  - 2) + (3*X[self.n - 1] **2 + 2*X[self.n - 1]  - 14)*(6*X[self.n - 1] **2 + 4*X[self.n - 1]  - 28)
 
-        for i in range(self.n - 1):
-            G[i][i + 1] = 24*X[i+1] - 32
-            G[i + 1][i] = G[i][i + 1]
-        for i in range(1, self.n - 1):
-            G[i][i] = (20 - 12*X[i] )*(X[i-1]  - X[i] **3 + 5*X[i] **2 - 2*X[i]  - 13) + (12*X[i]  + 4)*(X[i-1]  + X[i] **3 + X[i] **2 - 14*X[i]  - 29) + \
-                (-6*X[i] **2 + 20*X[i]  - 4)*(-3*X[i] **2 + 10*X[i]  - 2) + (3*X[i] **2 + 2*X[i]  - 14)*(6*X[i] **2 + 4*X[i]  - 28) + 4
+        # for i in range(self.n - 1):
+        #     G[i][i + 1] = 24*X[i+1] - 32
+        #     G[i + 1][i] = G[i][i + 1]
+        # for i in range(1, self.n - 1):
+        #     G[i][i] = (20 - 12*X[i] )*(X[i-1]  - X[i] **3 + 5*X[i] **2 - 2*X[i]  - 13) + (12*X[i]  + 4)*(X[i-1]  + X[i] **3 + X[i] **2 - 14*X[i]  - 29) + \
+        #         (-6*X[i] **2 + 20*X[i]  - 4)*(-3*X[i] **2 + 10*X[i]  - 2) + (3*X[i] **2 + 2*X[i]  - 14)*(6*X[i] **2 + 4*X[i]  - 28) + 4
+        for i in range(int(self.n / 2)):
+            G[2 * i][2 * i] = 4
+            G[2 * i][2 * i + 1] = 24*X[2*i + 1] - 32
+            G[2 * i + 1][2 * i] = G[2 * i][2 * i + 1]
+            G[2 * i + 1][2 * i + 1] = (20 - 12*X[2*i + 1])*(X[2*i] - X[2*i + 1]**3 + 5*X[2*i + 1]**2 - 2*X[2*i + 1] - 13) + \
+                (12*X[2*i + 1] + 4)*(X[2*i] + X[2*i + 1]**3 + X[2*i + 1]**2 - 14*X[2*i + 1] - 29) + \
+                    (-6*X[2*i + 1]**2 + 20*X[2*i + 1] - 4)*(-3*X[2*i + 1]**2 + 10*X[2*i + 1] - 2) + \
+                        (3*X[2*i + 1]**2 + 2*X[2*i + 1] - 14)*(6*X[2*i + 1]**2 + 4*X[2*i + 1] - 28)
         return G
 
 class Extended_Rosenbrock:
@@ -389,10 +405,12 @@ def diff_EFR(n):
     """
     symbols_X = symbols("x:{}".format(n))
     f = 0
-    for i in range(n - 1):
-        f += ((symbols_X[i] + 5 * (symbols_X[i+1] ** 2) - symbols_X[i+1] ** 3 - 2 * symbols_X[i+1] - 13) ** 2 + \
-            (symbols_X[i] + symbols_X[i+1] ** 3 + symbols_X[i+1] ** 2 - 14 * symbols_X[i+1] - 29) ** 2)
-
+    # for i in range(n - 1):
+    #     f += ((symbols_X[i] + 5 * (symbols_X[i+1] ** 2) - symbols_X[i+1] ** 3 - 2 * symbols_X[i+1] - 13) ** 2 + \
+    #         (symbols_X[i] + symbols_X[i+1] ** 3 + symbols_X[i+1] ** 2 - 14 * symbols_X[i+1] - 29) ** 2)
+    for i in range(int(n / 2)):
+        f += ((symbols_X[2*i] + 5 * (symbols_X[2*i+1] ** 2) - symbols_X[2*i+1] ** 3 - 2 * symbols_X[2*i+1] - 13) ** 2 + \
+            (symbols_X[2*i] + symbols_X[2*i+1] ** 3 + symbols_X[2*i+1] ** 2 - 14 * symbols_X[2*i+1] - 29) ** 2)
     diff_list = []
     for symbol in symbols_X:
         diff_list.append(diff(f, symbol))
@@ -452,26 +470,27 @@ def test():
         
     #     print(g_function(x0, diff_list=diff_list, symbols_list=symbols_list))
         # print(G_function(x0, G_lists=G, symbols_list=symbols_list))
-    for n in [100]:
+    for n in [6]:
         # x0 = np.array(range(1, n+1))
-        x0 = np.ones(n)
-        t = np.array(range(int(n / 2)))
-        x0[2 * t] = -1.2
-        x0[2 * t + 1] = 1
-        penalty1 = Penalty1(n)
+        x0 = np.array([-2. ] * n )
+        # t = np.array(range(int(n / 2)))
+        # x0[2 * t] = -1.2
+        # x0[2 * t + 1] = 1
+        # penalty1 = Penalty1(n)
         # print(penalty1.func(x0))
         # print(penalty1.gfunc(x0))
         EFR = Extended_Freudenstein_Roth(n)
-        ER = Extended_Rosenbrock(n)
-        print(ER.func(x0))
-        print(ER.gfunc(x0))
-        print(ER.hess_func(x0))
+        # ER = Extended_Rosenbrock(n)
+        # print(ER.func(x0))
+        print(EFR.func(x0))
+        print(EFR.gfunc(x0))
+        print(EFR.hess_func(x0))
 
-        # diff_list, symbols_list = diff_ER(n)
-        # G, symbols_list = hess_expression(n, diff_list, symbols_list)
+        diff_list, symbols_list = diff_EFR(n)
+        G, symbols_list = hess_expression(n, diff_list, symbols_list)
 
         # print(g_function(x0, diff_list=diff_list, symbols_list=symbols_list))
-        # print(G_function(x0, G_lists=G, symbols_list=symbols_list))
+        print(G_function(x0, G_lists=G, symbols_list=symbols_list))
 
         # for symbol, diff in zip(symbols_list, diff_list):
         #     print(symbol, diff)
