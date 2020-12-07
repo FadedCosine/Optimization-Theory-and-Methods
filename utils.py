@@ -2,9 +2,15 @@ import math
 import copy
 import numpy as np
 from goto import with_goto
+import logging
+
+logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+                    datefmt='%d-%m-%Y:%H:%M:%S')
+logging.getLogger().setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 @with_goto
-def modified_Cholesky(G, hyper_parameters=None, u=1e-10):
+def modified_Cholesky(G, hyper_parameters=None, u=1e-20):
     """修正Cholesky分解
 
     Args:
@@ -15,6 +21,7 @@ def modified_Cholesky(G, hyper_parameters=None, u=1e-10):
     if hyper_parameters is not None:
         u = hyper_parameters['u']
     # 步1：初始化
+    G = np.array(G)
     gamma = 0 # 对角元最大元素
     ksai = 0 # 非对角元最大元素
     n = len(G)

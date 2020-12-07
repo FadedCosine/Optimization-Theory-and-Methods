@@ -173,6 +173,8 @@ def CLBFGS(X, func, gfunc, hyper_parameters=None, M = 15, search_mode="ELS", eps
         
         Rk_inv = np.linalg.inv(Rk)
         Dk = np.diag(Dk_que.queue)
+        logger.info("DK is {}".format(Dk))
+      
         mid_mat11 = Rk_inv.T @ (Dk + Yk.T @ Hk @ Yk) @ Rk_inv
         mid_mat_left = np.vstack((mid_mat11, -Rk_inv))
         mid_mat_right = np.vstack((-Rk_inv.T, np.zeros((item_num, item_num), dtype=float)))
@@ -276,7 +278,7 @@ if __name__ == '__main__':
         "GLL": {
             "rho": 0.25,
             "sigma": 0.4,
-            "M": 15,
+            "M": 5,
             "a": 1,
         },
         "LBFGS": {
@@ -288,9 +290,13 @@ if __name__ == '__main__':
     }
 
     for n in [100]:
-        # logger.info("Penalty1 函数")
-        # x0 = np.array(range(1, n + 1))
-        # penalty1 = functions.Penalty1(n)
+        logger.info("Penalty1 函数")
+        x0 = np.array(range(1, n + 1))
+        penalty1 = functions.Penalty1(n)
+        # logger.info("非精确线搜索下的FF方法")
+        # X_star, func_X_star, iter_num, function_num = FF.Fletcher_Freeman(x0,  penalty1.func, penalty1.gfunc, penalty1.hess_func, hyper_parameters=GLL_LBFGS_hyper_parameters)
+        
+
         # logger.info("非精确线搜索下的LBFGS法") 
         # X_star, func_X_star, iter_num, function_num = LBFGS(x0, penalty1.func, penalty1.gfunc, hyper_parameters=ILS_LBFGS_hyper_parameters)
 
@@ -298,9 +304,9 @@ if __name__ == '__main__':
         # X_star, func_X_star, iter_num, function_num = LBFGS(x0, penalty1.func, penalty1.gfunc, hyper_parameters=GLL_LBFGS_hyper_parameters)
         
 
-        logger.info("Extended_Freudenstein_Roth 函数")
-        x0 = np.array([-2.] * n)
-        EFR = functions.Extended_Freudenstein_Roth(n)
+        # logger.info("Extended_Freudenstein_Roth 函数")
+        # x0 = np.array([-2.] * n)
+        # EFR = functions.Extended_Freudenstein_Roth(n)
 
         # logger.info("非精确线搜索下的FF方法")
         # X_star, func_X_star, iter_num, function_num = FF.Fletcher_Freeman(x0,  EFR.func, EFR.gfunc, EFR.hess_func, hyper_parameters=GLL_LBFGS_hyper_parameters)
@@ -308,8 +314,8 @@ if __name__ == '__main__':
         # logger.info("精确线搜索下的LBFGS法") 
         # X_star, func_X_star, iter_num, function_num = LBFGS(x0, EFR.func, EFR.gfunc, hyper_parameters=ELS_LBFGS_hyper_parameters)
 
-        logger.info("非精确线搜索下的LBFGS法") 
-        X_star, func_X_star, iter_num, function_num = LBFGS(x0, EFR.func, EFR.gfunc, hyper_parameters=ILS_LBFGS_hyper_parameters)
+        # logger.info("非精确线搜索下的LBFGS法") 
+        # X_star, func_X_star, iter_num, function_num = CLBFGS(x0, EFR.func, EFR.gfunc, hyper_parameters=ILS_LBFGS_hyper_parameters)
 
         # logger.info("GLL线搜索下的LBFGS法") 
         # X_star, func_X_star, iter_num, function_num = CLBFGS(x0, EFR.func, EFR.gfunc, hyper_parameters=GLL_LBFGS_hyper_parameters)
@@ -326,7 +332,7 @@ if __name__ == '__main__':
         # X_star, func_X_star, iter_num, function_num = CLBFGS(x0, ER.func, ER.gfunc, hyper_parameters=ILS_LBFGS_hyper_parameters)
 
         # logger.info("GLL线搜索下的LBFGS法") 
-        # X_star, func_X_star, iter_num, function_num = CLBFGS(x0, ER.func, ER.gfunc, hyper_parameters=GLL_LBFGS_hyper_parameters)
+        # X_star, func_X_star, iter_num, function_num = LBFGS(x0, ER.func, ER.gfunc, hyper_parameters=GLL_LBFGS_hyper_parameters)
     
     ILS_criterion = CRITERION[1]
     ELS_LBFGS_hyper_parameters = {
