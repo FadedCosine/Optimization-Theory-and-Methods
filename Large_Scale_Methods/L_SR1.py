@@ -47,7 +47,7 @@ def CLSR1(X, func, gfunc, hyper_parameters=None, M = 15, search_mode="ELS", epsi
         epsilon = hyper_parameters["epsilon"]
         max_epoch = hyper_parameters["max_epoch"]
     n = len(X)
-    k = 0
+    k = 1
     function_k = 0
     func_values = [] # 记录每一步的函数值，在GLL中有用
     mk = 0 # GLL当中的mk初始值
@@ -207,7 +207,7 @@ if __name__ == '__main__':
         "max_epoch": 1000,
     }
 
-    for n in [100]:
+    for n in [10000]:
         logger.info("Penalty1 函数")
         x0 = np.array(range(1, n + 1))
         penalty1 = functions.Penalty1(n)
@@ -215,16 +215,16 @@ if __name__ == '__main__':
         # X_star, func_X_star, iter_num, function_num = FF.Fletcher_Freeman(x0,  penalty1.func, penalty1.gfunc, penalty1.hess_func, hyper_parameters=GLL_LSR1_hyper_parameters)
         
 
-        # logger.info("非精确线搜索下的LSR1法") 
-        # X_star, func_X_star, iter_num, function_num = CLSR1(x0, penalty1.func, penalty1.gfunc, hyper_parameters=ILS_LSR1_hyper_parameters)
+        logger.info("非精确线搜索下的LSR1法") 
+        X_star, func_X_star, iter_num, function_num = CLSR1(x0, penalty1.func, penalty1.gfunc, hyper_parameters=ILS_LSR1_hyper_parameters)
 
         # logger.info("GLL线搜索下的LSR1法") 
         # X_star, func_X_star, iter_num, function_num = CLSR1(x0, penalty1.func, penalty1.gfunc, hyper_parameters=GLL_LSR1_hyper_parameters)
         
 
-        logger.info("Extended_Freudenstein_Roth 函数")
-        x0 = np.array([-2.] * n)
-        EFR = functions.Extended_Freudenstein_Roth(n)
+        # logger.info("Extended_Freudenstein_Roth 函数")
+        # x0 = np.array([-2.] * n)
+        # EFR = functions.Extended_Freudenstein_Roth(n)
 
         # logger.info("非精确线搜索下的FF方法")
         # X_star, func_X_star, iter_num, function_num = FF.Fletcher_Freeman(x0,  EFR.func, EFR.gfunc, EFR.hess_func, hyper_parameters=GLL_LSR1_hyper_parameters)
@@ -232,8 +232,8 @@ if __name__ == '__main__':
         # logger.info("精确线搜索下的LSR1法") 
         # X_star, func_X_star, iter_num, function_num = CLSR1(x0, EFR.func, EFR.gfunc, hyper_parameters=ELS_LSR1_hyper_parameters)
 
-        logger.info("非精确线搜索下的LSR1法") 
-        X_star, func_X_star, iter_num, function_num = CLSR1(x0, EFR.func, EFR.gfunc, hyper_parameters=ILS_LSR1_hyper_parameters)
+        # logger.info("非精确线搜索下的LSR1法") 
+        # X_star, func_X_star, iter_num, function_num = CLSR1(x0, EFR.func, EFR.gfunc, hyper_parameters=ILS_LSR1_hyper_parameters)
 
         # logger.info("GLL线搜索下的LSR1法") 
         # X_star, func_X_star, iter_num, function_num = CLSR1(x0, EFR.func, EFR.gfunc, hyper_parameters=GLL_LSR1_hyper_parameters)

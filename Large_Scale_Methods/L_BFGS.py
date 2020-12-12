@@ -37,7 +37,7 @@ def LBFGS(X, func, gfunc, hyper_parameters=None, M = 15, search_mode="ELS", epsi
         epsilon = hyper_parameters["epsilon"]
         max_epoch = hyper_parameters["max_epoch"]
     n = len(X)
-    k = 0
+    k = 1
     function_k = 0
     func_values = [] # 记录每一步的函数值，在GLL中有用
     mk = 0 # GLL当中的mk初始值
@@ -140,7 +140,7 @@ def CLBFGS(X, func, gfunc, hyper_parameters=None, M = 15, search_mode="ELS", eps
         epsilon = hyper_parameters["epsilon"]
         max_epoch = hyper_parameters["max_epoch"]
     n = len(X)
-    k = 0
+    k = 1
     function_k = 0
     func_values = [] # 记录每一步的函数值，在GLL中有用
     mk = 0 # GLL当中的mk初始值
@@ -173,8 +173,6 @@ def CLBFGS(X, func, gfunc, hyper_parameters=None, M = 15, search_mode="ELS", eps
         
         Rk_inv = np.linalg.inv(Rk)
         Dk = np.diag(Dk_que.queue)
-        logger.info("DK is {}".format(Dk))
-      
         mid_mat11 = Rk_inv.T @ (Dk + Yk.T @ Hk @ Yk) @ Rk_inv
         mid_mat_left = np.vstack((mid_mat11, -Rk_inv))
         mid_mat_right = np.vstack((-Rk_inv.T, np.zeros((item_num, item_num), dtype=float)))
@@ -182,7 +180,7 @@ def CLBFGS(X, func, gfunc, hyper_parameters=None, M = 15, search_mode="ELS", eps
         Hk = Hk + np.hstack((Sk, Hk @ Yk)) @ mid_mat @ np.vstack((Sk.T, Yk.T @ Hk))
 
     d = np.squeeze(np.array(-Hk @ g))
-   
+
     before_LS_time = time.time()
     #求得下降方向之后，此后的步骤与其他优化方法无异
     if search_mode == "ELS":
@@ -276,29 +274,30 @@ if __name__ == '__main__':
     }
     GLL_LBFGS_hyper_parameters = {
         "GLL": {
-            "rho": 0.25,
-            "sigma": 0.4,
-            "M": 5,
-            "a": 1,
+            "rho": 0.2,
+            "sigma": 0.5,
+            "M": 1,
+            "a": 3,
         },
         "LBFGS": {
-            "M": 10,
+            "M": 15,
         },
         "search_mode": "GLL",
         "epsilon": 1e-5,
         "max_epoch": 1000,
     }
 
-    for n in [100]:
+    for n in [10000]:
         logger.info("Penalty1 函数")
         x0 = np.array(range(1, n + 1))
         penalty1 = functions.Penalty1(n)
+
         # logger.info("非精确线搜索下的FF方法")
         # X_star, func_X_star, iter_num, function_num = FF.Fletcher_Freeman(x0,  penalty1.func, penalty1.gfunc, penalty1.hess_func, hyper_parameters=GLL_LBFGS_hyper_parameters)
         
 
-        # logger.info("非精确线搜索下的LBFGS法") 
-        # X_star, func_X_star, iter_num, function_num = LBFGS(x0, penalty1.func, penalty1.gfunc, hyper_parameters=ILS_LBFGS_hyper_parameters)
+        logger.info("非精确线搜索下的LBFGS法") 
+        X_star, func_X_star, iter_num, function_num = CLBFGS(x0, penalty1.func, penalty1.gfunc, hyper_parameters=ILS_LBFGS_hyper_parameters)
 
         # logger.info("GLL线搜索下的LBFGS法") 
         # X_star, func_X_star, iter_num, function_num = LBFGS(x0, penalty1.func, penalty1.gfunc, hyper_parameters=GLL_LBFGS_hyper_parameters)
@@ -315,7 +314,7 @@ if __name__ == '__main__':
         # X_star, func_X_star, iter_num, function_num = LBFGS(x0, EFR.func, EFR.gfunc, hyper_parameters=ELS_LBFGS_hyper_parameters)
 
         # logger.info("非精确线搜索下的LBFGS法") 
-        # X_star, func_X_star, iter_num, function_num = CLBFGS(x0, EFR.func, EFR.gfunc, hyper_parameters=ILS_LBFGS_hyper_parameters)
+        # X_star, func_X_star, iter_num, function_num = LBFGS(x0, EFR.func, EFR.gfunc, hyper_parameters=ILS_LBFGS_hyper_parameters)
 
         # logger.info("GLL线搜索下的LBFGS法") 
         # X_star, func_X_star, iter_num, function_num = CLBFGS(x0, EFR.func, EFR.gfunc, hyper_parameters=GLL_LBFGS_hyper_parameters)
@@ -387,10 +386,11 @@ if __name__ == '__main__':
         "max_epoch": 1000,
     }
 
-    # x0 = np.array([1/1000] * int(1000))
-    # f_funciton = functions.trigonometric
-    # g_function = functions.g_trigonometric
-    # G_function = functions.G_trigonometric
+    x0 = np.array([1/1000] * int(1000))
+    f_funciton = functions.trigonometric
+    g_function = functions.g_trigonometric
+    G_function = functions.G_trigonometric
+
     # logger.info("精确线搜索下的LBFGS法") 
     # X_star, func_X_star, iter_num, function_num = LBFGS(x0, f_funciton, g_function, hyper_parameters=ELS_LBFGS_hyper_parameters)
 
