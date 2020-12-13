@@ -9,7 +9,7 @@ from Line_Search.GLL import GLL_search
 import utils
 import functools
 import copy
-import scipy
+from scipy.sparse.linalg import gmres
 import logging
 logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
                     datefmt='%d-%m-%Y:%H:%M:%S')
@@ -74,6 +74,12 @@ def inexact_newton_method(X, func, gfunc, hess_funct, hyper_parameters=None, sea
         eta = eta0
     else:
         if eta_mode == 1:
+            # logger.info("g is {}".format(g))
+            # logger.info("g size is {}".format(g.shape))
+            # logger.info("g_pre size is {}".format(g_pre.shape))
+            # logger.info("G_pre size is {}".format(G_pre.shape))
+            # logger.info("d_pre size is {}".format(d_pre.shape))
+            # logger.info("G_pre @ d_pre size is {}".format((G_pre @ d_pre).shape))
             eta = np.linalg.norm(g - g_pre - G_pre @ d_pre) / np.linalg.norm(g_pre)
         elif eta_mode == 2:
             eta = gamma * (np.linalg.norm(g) / np.linalg.norm(g_pre)) ** sigma
@@ -87,7 +93,7 @@ def inexact_newton_method(X, func, gfunc, hess_funct, hyper_parameters=None, sea
             if gamma * eta_pre ** sigma > 0.1:
                 eta = max(eta, gamma * eta_pre ** sigma)
     #使用GMRES方法迭代求解dk
-    d = scipy.sparse.linalg.gmres(G, -g, tol=eta)
+    d = gmres(G, -g, tol=eta)[0]
     before_LS_time = time.time()
     #求得下降方向之后，此后的步骤与其他优化方法无异
     if search_mode == "ELS":
@@ -109,14 +115,15 @@ def inexact_newton_method(X, func, gfunc, hess_funct, hyper_parameters=None, sea
     func_values.append(func_X_new)
     g_pre = g
     G_pre = G
+    d_pre = d
     g = gfunc(X_new)
     G = hess_funct(X)
     
     logging.info("g is {}".format(g))
     logger.info("g的范数为{g}，epsilon * max(1, |x_k|)为{xk}".format(g = np.linalg.norm(g), xk = epsilon * max(1, np.linalg.norm(X_new))))
     # 给出的终止条件可能存在一些问题，由于编程语言进度的限制，g的下降量可能为0，从而计算 rho的时候可能存在除0的情况
-    if np.linalg.norm(g) < epsilon * max(1, np.linalg.norm(X_new)): 
-    # if abs(func_X_new - F) <= epsilon:
+    # if np.linalg.norm(g) < epsilon * max(1, np.linalg.norm(X_new)): 
+    if abs(func_X_new - F) <= epsilon:
         end_time = time.time()
         logger.info("因为满足终止条件，{mode}的非精确牛顿法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终用时{time}，最终X={X}，最终函数值={func_X_new}".format(mode=search_mode, iter=k, func_k=function_k, time=end_time-start_time, X=X,func_X_new=func_X_new))
         return X_new, func_X_new, k, function_k
@@ -176,7 +183,7 @@ if __name__ == '__main__':
         },
         "search_mode": "ELS",
         "epsilon": 1e-5,
-        "max_epoch": 1000,
+        "max_epoch": 10000,
     }
     
     ILS_INM_hyper_parameters = {
@@ -202,7 +209,7 @@ if __name__ == '__main__':
         },
         "search_mode": "ILS",
         "epsilon": 1e-5,
-        "max_epoch": 1000,
+        "max_epoch": 10000,
     }
     GLL_INM_hyper_parameters = {
         "GLL": {
@@ -223,7 +230,7 @@ if __name__ == '__main__':
         },
         "search_mode": "GLL",
         "epsilon": 1e-5,
-        "max_epoch": 1000,
+        "max_epoch": 10000,
     }
 
     for n in [1000]:
