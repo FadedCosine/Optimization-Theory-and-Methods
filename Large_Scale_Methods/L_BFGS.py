@@ -106,12 +106,12 @@ def LBFGS(X, func, gfunc, hyper_parameters=None, M = 15, search_mode="ELS", epsi
     # if abs(func_X_new - F) <= epsilon:
         end_time = time.time()
         logger.info("因为满足终止条件，{mode}的有限内存BFGS方法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终用时{time}，最终X={X}，最终函数值={func_X_new}".format(mode=search_mode, iter=k, func_k=function_k, time=end_time-start_time, X=X,func_X_new=func_X_new))
-        return X_new, func_X_new, k, function_k
+        return X_new, func_X_new, k, function_k, end_time-start_time
     if k > max_epoch:
         end_time = time.time()
         logger.info("超过最大迭代次数，{mode}的有限内存BFGS方法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终用时{time}，最终X={X}，最终函数值={func_X_new}".format(mode=search_mode, iter=k, func_k=function_k, time=end_time-start_time, X=X,func_X_new=func_X_new))
         
-        return X_new, func_X_new, k, function_k
+        return X_new, func_X_new, k, function_k, end_time-start_time
     X = X_new
     g = g_new
     F = func_X_new
@@ -218,12 +218,12 @@ def CLBFGS(X, func, gfunc, hyper_parameters=None, M = 15, search_mode="ELS", eps
     # if abs(func_X_new - F) <= epsilon:
         end_time = time.time()
         logger.info("因为满足终止条件，{mode}的有限内存BFGS方法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终用时{time}，最终X={X}，最终函数值={func_X_new}".format(mode=search_mode, iter=k, func_k=function_k, time=end_time-start_time, X=X,func_X_new=func_X_new))
-        return X_new, func_X_new, k, function_k
+        return X_new, func_X_new, k, function_k, end_time-start_time
     if k > max_epoch:
         end_time = time.time()
         logger.info("超过最大迭代次数，{mode}的有限内存BFGS方法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终用时{time}，最终X={X}，最终函数值={func_X_new}".format(mode=search_mode, iter=k, func_k=function_k, time=end_time-start_time, X=X,func_X_new=func_X_new))
         
-        return X_new, func_X_new, k, function_k
+        return X_new, func_X_new, k, function_k, end_time-start_time
     X = X_new
     g = g_new
     
@@ -288,19 +288,33 @@ if __name__ == '__main__':
     }
 
     for n in [10000]:
-        logger.info("Penalty1 函数")
-        x0 = np.array(range(1, n + 1))
-        penalty1 = functions.Penalty1(n)
+        # logger.info("Penalty1 函数")
+        # x0 = np.array(range(1, n + 1))
+        # penalty1 = functions.Penalty1(n)
 
-        # logger.info("非精确线搜索下的FF方法")
-        # X_star, func_X_star, iter_num, function_num = FF.Fletcher_Freeman(x0,  penalty1.func, penalty1.gfunc, penalty1.hess_func, hyper_parameters=GLL_LBFGS_hyper_parameters)
+        # logger.info("精确线搜索下的LBFGS法") 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = LBFGS(x0, penalty1.func, penalty1.gfunc, hyper_parameters=ELS_LBFGS_hyper_parameters)
+        # logger.info("LBFGS & ELS & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
         
-
-        logger.info("非精确线搜索下的LBFGS法") 
-        X_star, func_X_star, iter_num, function_num = CLBFGS(x0, penalty1.func, penalty1.gfunc, hyper_parameters=ILS_LBFGS_hyper_parameters)
-
+        # logger.info("非精确线搜索下的LBFGS法") 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = LBFGS(x0, penalty1.func, penalty1.gfunc, hyper_parameters=ILS_LBFGS_hyper_parameters)
+        # logger.info("LBFGS & ILS & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
+        
         # logger.info("GLL线搜索下的LBFGS法") 
-        # X_star, func_X_star, iter_num, function_num = LBFGS(x0, penalty1.func, penalty1.gfunc, hyper_parameters=GLL_LBFGS_hyper_parameters)
+        # X_star, func_X_star, iter_num, function_num, cpu_time = LBFGS(x0, penalty1.func, penalty1.gfunc, hyper_parameters=GLL_LBFGS_hyper_parameters)
+        # logger.info("LBFGS & GLL & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
+        
+        # logger.info("精确线搜索下的CLBFGS法") 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = CLBFGS(x0, penalty1.func, penalty1.gfunc, hyper_parameters=ELS_LBFGS_hyper_parameters)
+        # logger.info("压缩LBFGS & ELS & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
+        
+        # logger.info("非精确线搜索下的CLBFGS法") 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = CLBFGS(x0, penalty1.func, penalty1.gfunc, hyper_parameters=ILS_LBFGS_hyper_parameters)
+        # logger.info("压缩LBFGS & ILS & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
+        
+        # logger.info("GLL线搜索下的CLBFGS法") 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = CLBFGS(x0, penalty1.func, penalty1.gfunc, hyper_parameters=GLL_LBFGS_hyper_parameters)
+        # logger.info("压缩LBFGS & GLL & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
         
 
         # logger.info("Extended_Freudenstein_Roth 函数")
@@ -311,13 +325,13 @@ if __name__ == '__main__':
         # X_star, func_X_star, iter_num, function_num = FF.Fletcher_Freeman(x0,  EFR.func, EFR.gfunc, EFR.hess_func, hyper_parameters=GLL_LBFGS_hyper_parameters)
         
         # logger.info("精确线搜索下的LBFGS法") 
-        # X_star, func_X_star, iter_num, function_num = LBFGS(x0, EFR.func, EFR.gfunc, hyper_parameters=ELS_LBFGS_hyper_parameters)
+        # X_star, func_X_star, iter_num, function_num, cpu_time = LBFGS(x0, EFR.func, EFR.gfunc, hyper_parameters=ELS_LBFGS_hyper_parameters)
 
         # logger.info("非精确线搜索下的LBFGS法") 
-        # X_star, func_X_star, iter_num, function_num = LBFGS(x0, EFR.func, EFR.gfunc, hyper_parameters=ILS_LBFGS_hyper_parameters)
+        # X_star, func_X_star, iter_num, function_num, cpu_time = LBFGS(x0, EFR.func, EFR.gfunc, hyper_parameters=ILS_LBFGS_hyper_parameters)
 
         # logger.info("GLL线搜索下的LBFGS法") 
-        # X_star, func_X_star, iter_num, function_num = CLBFGS(x0, EFR.func, EFR.gfunc, hyper_parameters=GLL_LBFGS_hyper_parameters)
+        # X_star, func_X_star, iter_num, function_num, cpu_time = CLBFGS(x0, EFR.func, EFR.gfunc, hyper_parameters=GLL_LBFGS_hyper_parameters)
         
         # logger.info("Extended_Rosenbrock 函数")
         # ER = functions.Extended_Rosenbrock(n)
@@ -325,77 +339,41 @@ if __name__ == '__main__':
         # x0[2 * t] = -1.2
         # x0[2 * t + 1] = 1
         # logger.info("精确线搜索下的LBFGS法") 
-        # X_star, func_X_star, iter_num, function_num = CLBFGS(x0, ER.func, ER.gfunc, hyper_parameters=ELS_LBFGS_hyper_parameters)
+        # X_star, func_X_star, iter_num, function_num, cpu_time = CLBFGS(x0, ER.func, ER.gfunc, hyper_parameters=ELS_LBFGS_hyper_parameters)
 
         # logger.info("非精确线搜索下的LBFGS法") 
-        # X_star, func_X_star, iter_num, function_num = CLBFGS(x0, ER.func, ER.gfunc, hyper_parameters=ILS_LBFGS_hyper_parameters)
+        # X_star, func_X_star, iter_num, function_num, cpu_time = CLBFGS(x0, ER.func, ER.gfunc, hyper_parameters=ILS_LBFGS_hyper_parameters)
 
         # logger.info("GLL线搜索下的LBFGS法") 
-        # X_star, func_X_star, iter_num, function_num = LBFGS(x0, ER.func, ER.gfunc, hyper_parameters=GLL_LBFGS_hyper_parameters)
-    
-    ILS_criterion = CRITERION[1]
-    ELS_LBFGS_hyper_parameters = {
-        "ELS": {
-            "retreat_method": {
-                "a0" : 1, 
-                "r": 1e-7,
-                "t": 5,
-            },
-            "golden_method": {
-                "epsilon": 1e-7,
-            }
-        },
-        "LBFGS": {
-            "M": 15,
-        },
-        "search_mode": "ELS",
-        "epsilon": 1e-5,
-        "max_epoch": 1000,
-    }
-    
-    ILS_LBFGS_hyper_parameters = {
-        "ILS": {
-            "rho": 0.2,
-            "sigma": 0.4,
-            "t": 1.5,
-            "alpha0": 1e-6,
-            "criterion": ILS_criterion
-        },
-        "GM_newton": {
-            "zeta": 1e-8,
-        },
-        "LBFGS": {
-            "M": 15,
-        },
-        "search_mode": "ILS",
-        "epsilon": 1e-5,
-        "max_epoch": 1000,
-    }
-    GLL_LBFGS_hyper_parameters = {
-        "GLL": {
-            "rho": 0.25,
-            "sigma": 0.5,
-            "M": 12,
-            "a": 1,
-        },
-        "LBFGS": {
-            "M": 15,
-        },
-        "search_mode": "GLL",
-        "epsilon": 1e-5,
-        "max_epoch": 1000,
-    }
+        # X_star, func_X_star, iter_num, function_num, cpu_time = LBFGS(x0, ER.func, ER.gfunc, hyper_parameters=GLL_LBFGS_hyper_parameters)
 
-    x0 = np.array([1/1000] * int(1000))
-    f_funciton = functions.trigonometric
-    g_function = functions.g_trigonometric
-    G_function = functions.G_trigonometric
+        logger.info("Trigonometric 函数")
+        x0 = np.array([1/n] * int(n))
+        f_funciton = functions.trigonometric
+        g_function = functions.g_trigonometric
+        G_function = functions.G_trigonometric
 
-    # logger.info("精确线搜索下的LBFGS法") 
-    # X_star, func_X_star, iter_num, function_num = LBFGS(x0, f_funciton, g_function, hyper_parameters=ELS_LBFGS_hyper_parameters)
+        logger.info("精确线搜索下的LBFGS法") 
+        X_star, func_X_star, iter_num, function_num, cpu_time = LBFGS(x0, f_funciton, g_function, hyper_parameters=ELS_LBFGS_hyper_parameters)
+        logger.info("LBFGS & ELS & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        
+        logger.info("非精确线搜索下的LBFGS法") 
+        X_star, func_X_star, iter_num, function_num, cpu_time = LBFGS(x0, f_funciton, g_function, hyper_parameters=ILS_LBFGS_hyper_parameters)
+        logger.info("LBFGS & ILS & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
 
-    # logger.info("非精确线搜索下的LBFGS法") 
-    # X_star, func_X_star, iter_num, function_num = LBFGS(x0, f_funciton, g_function, hyper_parameters=ILS_LBFGS_hyper_parameters)
+        logger.info("GLL线搜索下的LBFGS法") 
+        X_star, func_X_star, iter_num, function_num, cpu_time = LBFGS(x0, f_funciton, g_function, hyper_parameters=GLL_LBFGS_hyper_parameters)
+        logger.info("LBFGS & GLL & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        
+        logger.info("精确线搜索下的CLBFGS法") 
+        X_star, func_X_star, iter_num, function_num, cpu_time = CLBFGS(x0, f_funciton, g_function, hyper_parameters=ELS_LBFGS_hyper_parameters)
+        logger.info("压缩LBFGS & ELS & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        
+        logger.info("非精确线搜索下的CLBFGS法") 
+        X_star, func_X_star, iter_num, function_num, cpu_time = CLBFGS(x0, f_funciton, g_function, hyper_parameters=ILS_LBFGS_hyper_parameters)
+        logger.info("压缩LBFGS & ILS & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
 
-    # logger.info("GLL线搜索下的LBFGS法") 
-    # X_star, func_X_star, iter_num, function_num = LBFGS(x0, f_funciton, g_function, hyper_parameters=GLL_LBFGS_hyper_parameters)
+        logger.info("GLL线搜索下的CLBFGS法") 
+        X_star, func_X_star, iter_num, function_num, cpu_time = CLBFGS(x0, f_funciton, g_function, hyper_parameters=GLL_LBFGS_hyper_parameters)
+        logger.info("压缩LBFGS & GLL & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        

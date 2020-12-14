@@ -153,9 +153,6 @@ ILS_GM_newton_hyper_parameters = {
     "epsilon": 1e-8,
     "max_epoch": 1000,
 }
-# X_star, func_X_star, iter_num = newton_method.GM_newton(x0, functions.wood, g_wood_partial, G_wood_partial, hyper_parameters=ILS_GM_newton_hyper_parameters)
-
-# logger.info("GLL线搜索下的GM牛顿法") # 可收敛
 
 GLL_GM_newton_hyper_parameters = {
     "GLL": {
@@ -174,9 +171,7 @@ GLL_GM_newton_hyper_parameters = {
     "epsilon": 1e-8,
     "max_epoch": 1000,
 }
-# X_star, func_X_star, iter_num = newton_method.GM_newton(x0, functions.wood, g_wood_partial, G_wood_partial, hyper_parameters=GLL_GM_newton_hyper_parameters)
 
-# logger.info("精确线搜索下的FF方法") # 可收敛
 ELS_FF_hyper_parameters = {
     "ELS": {
         "retreat_method": {
@@ -192,8 +187,7 @@ ELS_FF_hyper_parameters = {
     "epsilon": 1e-8,
     "max_epoch": 10000,
 }
-# X_star, func_X_star, iter_num = FF.Fletcher_Freeman(x0, functions.wood, g_wood_partial, G_wood_partial, hyper_parameters=ELS_FF_hyper_parameters)
-# logger.info("非精确线搜索下的FF方法") # 可收敛
+
 ILS_FF_hyper_parameters = {
     "ILS": {
         "rho": 0.1,
@@ -207,8 +201,6 @@ ILS_FF_hyper_parameters = {
     "max_epoch": 1000,
 }
 
-# X_star, func_X_star, iter_num = FF.Fletcher_Freeman(x0, functions.wood, g_wood_partial, G_wood_partial, hyper_parameters=ILS_FF_hyper_parameters)
-
 # logger.info("GLL线搜索下的FF方法") # 可收敛
 GLL_FF_hyper_parameters = {
     "GLL": {
@@ -221,8 +213,6 @@ GLL_FF_hyper_parameters = {
     "epsilon": 1e-8,
     "max_epoch": 1000,
 }
-
-# X_star, func_X_star, iter_num = FF.Fletcher_Freeman(x0, functions.wood, g_wood_partial, G_wood_partial, hyper_parameters=GLL_FF_hyper_parameters)
 
 method_list = [newton_method.damp_newton, newton_method.damp_newton, newton_method.damp_newton, 
                 newton_method.GM_newton, newton_method.GM_newton, newton_method.GM_newton,
