@@ -455,8 +455,8 @@ if __name__ == '__main__':
         "epsilon": 1e-8,
         "max_epoch": 10000,
     }
-
-    for n in [1000]:
+    N = 1000
+    for n in [N]:
         # logger.info("Penalty1 函数")
         # x0 = np.array(range(1, n + 1))
         # penalty1 = functions.Penalty1(n)

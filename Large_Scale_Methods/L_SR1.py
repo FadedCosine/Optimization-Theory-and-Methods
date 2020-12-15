@@ -207,7 +207,8 @@ if __name__ == '__main__':
         "max_epoch": 1000,
     }
     M = [5, 9, 15]
-    for n in [100]:
+    N = 1000
+    for n in [N]:
         # logger.info("Penalty1 函数")
         # x0 = np.array(range(1, n + 1))
         # penalty1 = functions.Penalty1(n)
