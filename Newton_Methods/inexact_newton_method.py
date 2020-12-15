@@ -66,6 +66,7 @@ def inexact_newton_method(X, func, gfunc, hess_funct, hyper_parameters=None, sea
     function_k += 1
     func_values.append(F)
     start_time = time.time()
+    use_gmres = True
     #计算下降方向d_k，这一步包括修正Hk，和计算dk = -Hk * gk
     label .count_dk
     
@@ -87,11 +88,19 @@ def inexact_newton_method(X, func, gfunc, hess_funct, hyper_parameters=None, sea
             if gamma * eta_pre ** sigma > 0.1:
                 eta = max(eta, gamma * eta_pre ** sigma)
     #使用GMRES方法迭代求解dk
-    d = gmres(G, -g, tol=eta)[0]
-    if np.all(d == 0):
-        end_time = time.time()
-        logger.info("迭代求解所得下降方向为0，{mode}的非精确牛顿法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终用时{time}，最终X={X}，最终函数值={func_X_new}".format(mode=search_mode, iter=k, func_k=function_k, time=end_time-start_time, X=X,func_X_new=func_X_new))
-        return X, func_X_new, k, function_k, end_time-start_time
+    if use_gmres:
+        logger.info("eta is {}".format(eta))
+        gmres_result = gmres(G, -g, tol=eta)
+        logger.info("gmers reslut is {}".format(gmres_result))
+        d = gmres_result[0]
+    if np.all(d == 0) or use_gmres == False:
+        inv_hass = np.linalg.inv(G)
+        d = -np.dot(inv_hass , g)
+        use_gmres = False
+ 
+        # end_time = time.time()
+        # logger.info("迭代求解所得下降方向为0，{mode}的非精确牛顿法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终用时{time}，最终X={X}，最终函数值={func_X_new}".format(mode=search_mode, iter=k, func_k=function_k, time=end_time-start_time, X=X,func_X_new=func_X_new))
+        # return X, func_X_new, k, function_k, end_time-start_time
     before_LS_time = time.time()
     #求得下降方向之后，此后的步骤与其他优化方法无异
     if search_mode == "ELS":
@@ -120,8 +129,8 @@ def inexact_newton_method(X, func, gfunc, hess_funct, hyper_parameters=None, sea
     logging.info("g is {}".format(g))
     logger.info("g的范数为{g}，epsilon * max(1, |x_k|)为{xk}".format(g = np.linalg.norm(g), xk = epsilon * max(1, np.linalg.norm(X_new))))
     # 给出的终止条件可能存在一些问题，由于编程语言进度的限制，g的下降量可能为0，从而计算 rho的时候可能存在除0的情况
-    # if np.linalg.norm(g) < epsilon * max(1, np.linalg.norm(X_new)): 
-    if abs(func_X_new - F) <= epsilon:
+    if np.linalg.norm(g) < epsilon * max(1, np.linalg.norm(X_new)): 
+    # if abs(func_X_new - F) <= epsilon:
         end_time = time.time()
         logger.info("因为满足终止条件，{mode}的非精确牛顿法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终用时{time}，最终X={X}，最终函数值={func_X_new}".format(mode=search_mode, iter=k, func_k=function_k, time=end_time-start_time, X=X,func_X_new=func_X_new))
         return X_new, func_X_new, k, function_k, end_time-start_time
@@ -189,6 +198,7 @@ def INBM(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="ILS", e
     function_k += 1
     func_values.append(F)
     start_time = time.time()
+    use_gmres = True
     #计算下降方向d_k，这一步包括修正Hk，和计算dk = -Hk * gk
     label .count_dk
     
@@ -200,6 +210,8 @@ def INBM(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="ILS", e
             eta = np.linalg.norm(g - g_pre - G_pre @ d_pre) / np.linalg.norm(g_pre)
         elif eta_mode == 2:
             eta = gamma * (np.linalg.norm(g) / np.linalg.norm(g_pre)) ** sigma
+        elif eta_mode == 0:
+            eta = eta0
         
     # 安全保护
     if eta_pre is not None and safeguard:
@@ -211,11 +223,16 @@ def INBM(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="ILS", e
                 eta = max(eta, gamma * eta_pre ** sigma)
     #使用GMRES方法迭代求解dk
     eta = min(eta, eta_max)
-    logger.info("eta is {}".format(eta))
-    logger.info("gmres result is {}".format(gmres(G, -g, tol=eta)))
-    d = gmres(G, -g, tol=eta)[0]
-    if np.all(d == 0):
-        d = -g
+    
+    if use_gmres:
+        logger.info("eta is {}".format(eta))
+        gmres_result = gmres(G, -g, tol=eta)
+        logger.info("gmers reslut is {}".format(gmres_result))
+        d = gmres_result[0]
+    if np.all(d == 0) or use_gmres == False:
+        inv_hass = np.linalg.inv(G)
+        d = -np.dot(inv_hass , g)
+        use_gmres = False
         # end_time = time.time()
         # logger.info("迭代求解所得下降方向为0，{mode}的非精确牛顿法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终用时{time}，最终X={X}，最终函数值={func_X_new}".format(mode=search_mode, iter=k, func_k=function_k, time=end_time-start_time, X=X,func_X_new=func_X_new))
         # return X, func_X_new, k, function_k, end_time-start_time
@@ -280,14 +297,15 @@ if __name__ == '__main__':
     CRITERION = ["Armijo Goldstein", "Wolfe Powell", "Strong Wolfe Powell"]
     ILS_criterion = CRITERION[0]
     ELS_INM_hyper_parameters = {
+       
         "ELS": {
             "retreat_method": {
                 "a0" : 1, 
-                "r": 1e-7,
-                "t": 5,
+                "r": 1e-6,
+                "t": 1.5,
             },
             "golden_method": {
-                "epsilon": 1e-7,
+                "epsilon": 1e-6,
             }
         },
         "INM": {
@@ -301,16 +319,16 @@ if __name__ == '__main__':
             "u": 1e-50,
         },
         "search_mode": "ELS",
-        "epsilon": 1e-20,
+        "epsilon": 1e-5,
         "max_epoch": 10000,
     }
     
     ILS_INM_hyper_parameters = {
         "ILS": {
-            "rho": 0.2,
-            "sigma": 0.4,
+            "rho": 0.3,
+            "sigma": 0.5,
             "t": 1.5,
-            "alpha0": 1e-6,
+            "alpha0": 1,
             "criterion": ILS_criterion
         },
         "GM_newton": {
@@ -321,13 +339,13 @@ if __name__ == '__main__':
         },
         "INM": {
             "eta_mode": 1,
-            "eta0": 0.5,
+            "eta0": 0.1,
             "safeguard" : True,
             "gamma" : 0.9,
             "sigma" : (1 + math.sqrt(5)) / 2,
         },
         "search_mode": "ILS",
-        "epsilon": 1e-20,
+        "epsilon": 1e-5,
         "max_epoch": 10000,
     }
     GLL_INM_hyper_parameters = {
@@ -335,20 +353,20 @@ if __name__ == '__main__':
             "rho": 0.25,
             "sigma": 0.4,
             "M": 5,
-            "a": 1,
+            "a": 10,
         },
         "modified_Cholesky": {
             "u": 1e-50,
         },
         "INM": {
             "eta_mode": 1,
-            "eta0": 0.5,
-            "safeguard" : True,
+            "eta0": 1e-6,
+            "safeguard" : False,
             "gamma" : 0.9,
             "sigma" : (1 + math.sqrt(5)) / 2,
         },
         "search_mode": "GLL",
-        "epsilon": 1e-20,
+        "epsilon": 1e-5,
         "max_epoch": 10000,
     }
 
@@ -356,13 +374,14 @@ if __name__ == '__main__':
         "ELS": {
             "retreat_method": {
                 "a0" : 1, 
-                "r": 1e-7,
-                "t": 5,
+                "r": 1e-8,
+                "t": 1.5,
             },
             "golden_method": {
-                "epsilon": 1e-7,
+                "epsilon": 1e-8,
             }
         },
+     
         "INBM": {
             "eta_mode": 1,
             "eta0": 0.5,
@@ -378,16 +397,16 @@ if __name__ == '__main__':
             "u": 1e-50,
         },
         "search_mode": "ELS",
-        "epsilon": 1e-20,
+        "epsilon": 1e-5,
         "max_epoch": 10000,
     }
     
     ILS_INBM_hyper_parameters = {
         "ILS": {
-            "rho": 0.2,
-            "sigma": 0.3,
+            "rho": 0.25,
+            "sigma": 0.33,
             "t": 1.5,
-            "alpha0": 1e-6,
+            "alpha0": 1,
             "criterion": ILS_criterion
         },
         "GM_newton": {
@@ -408,14 +427,14 @@ if __name__ == '__main__':
             "theta_max": 0.5,
         },
         "search_mode": "ILS",
-        "epsilon": 1e-20,
+        "epsilon": 1e-5,
         "max_epoch": 10000,
     }
     GLL_INBM_hyper_parameters = {
         "GLL": {
             "rho": 0.25,
-            "sigma": 0.3,
-            "M": 3,
+            "sigma": 0.4,
+            "M": 5,
             "a": 1,
         },
         "modified_Cholesky": {
@@ -433,86 +452,105 @@ if __name__ == '__main__':
             "theta_max": 0.5,
         },
         "search_mode": "GLL",
-        "epsilon": 1e-20,
+        "epsilon": 1e-8,
         "max_epoch": 10000,
     }
 
-    for n in [5000]:
-        logger.info("Penalty1 函数")
-        x0 = np.array(range(1, n + 1))
-        penalty1 = functions.Penalty1(n)
+    for n in [1000]:
+        # logger.info("Penalty1 函数")
+        # x0 = np.array(range(1, n + 1))
+        # penalty1 = functions.Penalty1(n)
 
-        # logger.info("精确线搜索下的INM法") 
-        # X_star, func_X_star, iter_num, function_num, cpu_time = inexact_newton_method(x0, penalty1.func, penalty1.gfunc, penalty1.hess_func, hyper_parameters=ELS_INM_hyper_parameters)
-        # logger.info("非精确牛顿法 & ELS & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
-        
+        # ILS_INM_hyper_parameters["INM"]["eta_mode"] = 1
         # logger.info("非精确线搜索下的INM法") 
         # X_star, func_X_star, iter_num, function_num, cpu_time = inexact_newton_method(x0, penalty1.func, penalty1.gfunc, penalty1.hess_func, hyper_parameters=ILS_INM_hyper_parameters)
-        # logger.info("非精确牛顿法 & ILS & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
+        # logger.info("非精确牛顿法 & 选择1 & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
         
-        # logger.info("GLL线搜索下的INM法") 
-        # X_star, func_X_star, iter_num, function_num, cpu_time = inexact_newton_method(x0, penalty1.func, penalty1.gfunc, penalty1.hess_func, hyper_parameters=GLL_INM_hyper_parameters)
-        # logger.info("非精确牛顿法 & GLL & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
+        # ILS_INM_hyper_parameters["INM"]["eta_mode"] = 2
+        # logger.info("非精确线搜索下的INM法") 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = inexact_newton_method(x0, penalty1.func, penalty1.gfunc, penalty1.hess_func, hyper_parameters=ILS_INM_hyper_parameters)
+        # logger.info("非精确牛顿法 & 选择2 & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
         
-        # logger.info("精确线搜索下的INBM法") 
-        # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, penalty1.func, penalty1.gfunc, penalty1.hess_func, hyper_parameters=ELS_INBM_hyper_parameters)
-        # logger.info("非精确牛顿回溯法 & ELS & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
-        
-        logger.info("非精确线搜索下的INBM法") 
-        X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, penalty1.func, penalty1.gfunc, penalty1.hess_func, hyper_parameters=ILS_INBM_hyper_parameters)
-        logger.info("非精确牛顿回溯法 & ILS & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
-        
-        # logger.info("GLL线搜索下的INBM法") 
-        # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, penalty1.func, penalty1.gfunc, penalty1.hess_func, hyper_parameters=GLL_INBM_hyper_parameters)
-        # logger.info("非精确牛顿回溯法 & GLL & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
-        
-
-        # logger.info("Extended_Freudenstein_Roth 函数")
-        # x0 = np.array([-2.] * n)
-        # EFR = functions.Extended_Freudenstein_Roth(n)
-
-        # logger.info("非精确线搜索下的FF方法")
-        # X_star, func_X_star, iter_num, function_num = FF.Fletcher_Freeman(x0,  EFR.func, EFR.gfunc, EFR.hess_func, hyper_parameters=GLL_INBM_hyper_parameters)
-        
-        # logger.info("精确线搜索下的INBM法") 
-        # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, EFR.func, EFR.gfunc, EFR.hess_func, hyper_parameters=ELS_INBM_hyper_parameters)
-
+        # ILS_INBM_hyper_parameters["INBM"]["eta_mode"] = 1
         # logger.info("非精确线搜索下的INBM法") 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, penalty1.func, penalty1.gfunc, penalty1.hess_func, hyper_parameters=ILS_INBM_hyper_parameters)
+        # logger.info("非精确牛顿回溯法 & 选择1 & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
+        
+        # ILS_INBM_hyper_parameters["INBM"]["eta_mode"] = 2
+        # logger.info("非精确线搜索下的INBM法") 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, penalty1.func, penalty1.gfunc, penalty1.hess_func, hyper_parameters=ILS_INBM_hyper_parameters)
+        # logger.info("非精确牛顿回溯法 & 选择2 & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
+        
+      
+
+        logger.info("Extended_Freudenstein_Roth 函数")
+        x0 = np.array([-2.] * n)
+        EFR = functions.Extended_Freudenstein_Roth(n)
+       
+        # ILS_INM_hyper_parameters["INM"]["eta_mode"] = 1
+        # logger.info("选择1下的INM法") 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = inexact_newton_method(x0, EFR.func, EFR.gfunc, EFR.hess_func, hyper_parameters=ILS_INM_hyper_parameters)
+        # logger.info("非精确牛顿法 & 选择1 & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        
+        # ILS_INM_hyper_parameters["INM"]["eta_mode"] = 2
+        # logger.info("选择2下的INM法") 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = inexact_newton_method(x0, EFR.func, EFR.gfunc, EFR.hess_func, hyper_parameters=ILS_INM_hyper_parameters)
+        # logger.info("非精确牛顿法 & 选择2 & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        
+        # ILS_INBM_hyper_parameters["INBM"]["eta_mode"] = 1
+        # logger.info("选择1下的INBM法") 
         # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, EFR.func, EFR.gfunc, EFR.hess_func, hyper_parameters=ILS_INBM_hyper_parameters)
+        # logger.info("非精确牛顿回溯法 & 选择1 & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        
+        ILS_INBM_hyper_parameters["INBM"]["eta_mode"] = 2
+        logger.info("选择2下的INBM法") 
+        X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, EFR.func, EFR.gfunc, EFR.hess_func, hyper_parameters=ILS_INBM_hyper_parameters)
+        logger.info("非精确牛顿回溯法 & 选择2 & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        
 
         # logger.info("GLL线搜索下的INBM法") 
         # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, EFR.func, EFR.gfunc, EFR.hess_func, hyper_parameters=GLL_INBM_hyper_parameters)
         
         # logger.info("Extended_Rosenbrock 函数")
         # ER = functions.Extended_Rosenbrock(n)
+        # x0 = np.zeros(n)
         # t = np.array(range(int(n / 2)))
         # x0[2 * t] = -1.2
         # x0[2 * t + 1] = 1
-        # logger.info("精确线搜索下的INBM法") 
-        # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, ER.func, ER.gfunc, ER.hess_func, hyper_parameters=ELS_INBM_hyper_parameters)
 
-        # logger.info("非精确线搜索下的INBM法") 
+        # ILS_INM_hyper_parameters["INM"]["eta_mode"] = 1
+        # logger.info("选择1下的INM法") 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = inexact_newton_method(x0, ER.func, ER.gfunc, ER.hess_func, hyper_parameters=ILS_INM_hyper_parameters)
+        # logger.info("非精确牛顿法 & 选择1 & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        
+        # ILS_INM_hyper_parameters["INM"]["eta_mode"] = 2
+        # logger.info("选择2下的INM法") 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = inexact_newton_method(x0, ER.func, ER.gfunc, ER.hess_func, hyper_parameters=ILS_INM_hyper_parameters)
+        # logger.info("非精确牛顿法 & 选择2 & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        
+        # ILS_INBM_hyper_parameters["INBM"]["eta_mode"] = 1
+        # logger.info("选择1下的INBM法") 
         # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, ER.func, ER.gfunc, ER.hess_func, hyper_parameters=ILS_INBM_hyper_parameters)
+        # logger.info("非精确牛顿回溯法 & 选择1 & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        
+        # ILS_INBM_hyper_parameters["INBM"]["eta_mode"] = 2
+        # logger.info("选择2下的INBM法") 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, ER.func, ER.gfunc, ER.hess_func, hyper_parameters=ILS_INBM_hyper_parameters)
+        # logger.info("非精确牛顿回溯法 & 选择2 & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        
 
-        # logger.info("GLL线搜索下的INBM法") 
-        # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, ER.func, ER.gfunc, ER.hess_func, hyper_parameters=GLL_INBM_hyper_parameters)
-    
-    
-        x0 = np.array([1/n] * int(n))
-        f_funciton = functions.trigonometric
-        g_function = functions.g_trigonometric
-        G_function = functions.G_trigonometric
-        # logger.info("精确线搜索下的INBM法") 
-        # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, f_funciton, g_function, G_function, hyper_parameters=ELS_INBM_hyper_parameters)
-        # logger.info("非精确牛顿法 & ELS & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
-        
-        # logger.info("非精确线搜索下的INBM法") 
-        # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, f_funciton, g_function, G_function, hyper_parameters=ILS_INBM_hyper_parameters)
-        # logger.info("非精确牛顿法 & ILS & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        # x0 = np.array([1/n] * int(n))
+        # f_funciton = functions.trigonometric
+        # g_function = functions.g_trigonometric
+        # G_function = functions.G_trigonometric
+  
+        # logger.info("非精确线搜索下的INM法") 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = inexact_newton_method(x0, f_funciton, g_function, G_function, hyper_parameters=ILS_INM_hyper_parameters)
+        # logger.info("非精确牛顿法 & 选择2 & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
         
         # logger.info("GLL线搜索下的INBM法") 
-        # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, f_funciton, g_function, G_function, hyper_parameters=GLL_INBM_hyper_parameters)
-        # logger.info("非精确牛顿法 & ELS & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        # X_star, func_X_star, iter_num, function_num, cpu_time = inexact_newton_method(x0, f_funciton, g_function, G_function, hyper_parameters=GLL_INM_hyper_parameters)
+        # logger.info("非精确牛顿法 & GLL & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
         
         # logger.info("精确线搜索下的INBM法") 
         # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, f_funciton, g_function, G_function, hyper_parameters=ELS_INBM_hyper_parameters)
@@ -520,9 +558,9 @@ if __name__ == '__main__':
         
         # logger.info("非精确线搜索下的INBM法") 
         # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, f_funciton, g_function, G_function, hyper_parameters=ILS_INBM_hyper_parameters)
-        # logger.info("非精确牛顿回溯法 & ILS & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        # logger.info("非精确牛顿回溯法 & 选择1 & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
         
         # logger.info("GLL线搜索下的INBM法") 
         # X_star, func_X_star, iter_num, function_num, cpu_time = INBM(x0, f_funciton, g_function, G_function, hyper_parameters=GLL_INBM_hyper_parameters)
-        # logger.info("非精确牛顿回溯法 & ELS & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        # logger.info("非精确牛顿回溯法 & GLL & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
         

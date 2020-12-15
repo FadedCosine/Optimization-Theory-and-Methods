@@ -200,75 +200,91 @@ if __name__ == '__main__':
             "u": 1e-50,
         },
         "LSR1": {
-            "M": 10,
+            "M": 15,
         },
         "search_mode": "GLL",
         "epsilon": 1e-5,
         "max_epoch": 1000,
     }
-
-    for n in [10000]:
+    M = [5, 9, 15]
+    for n in [100]:
         # logger.info("Penalty1 函数")
         # x0 = np.array(range(1, n + 1))
         # penalty1 = functions.Penalty1(n)
         
-        # logger.info("精确线搜索下的LSR1法") 
-        # X_star, func_X_star, iter_num, function_num, time = CLSR1(x0, penalty1.func, penalty1.gfunc, hyper_parameters=ELS_LSR1_hyper_parameters)
-        # logger.info("压缩LSR1 & ELS & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
-        
-        # logger.info("非精确线搜索下的LSR1法") 
+        # ILS_LSR1_hyper_parameters["LSR1"]["M"] = M[0]
+        # logger.info("M={}的LSR1法".format(M[0])) 
         # X_star, func_X_star, iter_num, function_num, cpu_time = CLSR1(x0, penalty1.func, penalty1.gfunc, hyper_parameters=ILS_LSR1_hyper_parameters)
-        # logger.info("压缩LSR1 & ILS & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
+        # logger.info("压缩LSR1 & M={} & {} & {} & {} & {} & 是 \\\\".format(M[0], round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
         
-        # logger.info("GLL线搜索下的LSR1法") 
-        # X_star, func_X_star, iter_num, function_num, cpu_time = CLSR1(x0, penalty1.func, penalty1.gfunc, hyper_parameters=GLL_LSR1_hyper_parameters)
-        # logger.info("压缩LSR1 & GLL & {} & {} & {} & {} & 是 \\\\".format(round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
+        # ILS_LSR1_hyper_parameters["LSR1"]["M"] = M[1]
+        # logger.info("M={}的LSR1法".format(M[1])) 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = CLSR1(x0, penalty1.func, penalty1.gfunc, hyper_parameters=ILS_LSR1_hyper_parameters)
+        # logger.info("压缩LSR1 & M={} & {} & {} & {} & {} & 是 \\\\".format(M[1], round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
         
-
-        # logger.info("Extended_Freudenstein_Roth 函数")
-        # x0 = np.array([-2.] * n)
-        # EFR = functions.Extended_Freudenstein_Roth(n)
-
-        # logger.info("非精确线搜索下的FF方法")
-        # X_star, func_X_star, iter_num, function_num = FF.Fletcher_Freeman(x0,  EFR.func, EFR.gfunc, EFR.hess_func, hyper_parameters=GLL_LSR1_hyper_parameters)
+        # ILS_LSR1_hyper_parameters["LSR1"]["M"] = M[2]
+        # logger.info("M={}的LSR1法".format(M[2])) 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = CLSR1(x0, penalty1.func, penalty1.gfunc, hyper_parameters=ILS_LSR1_hyper_parameters)
+        # logger.info("压缩LSR1 & M={} & {} & {} & {} & {} & 是 \\\\".format(M[2], round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
         
-        # logger.info("精确线搜索下的LSR1法") 
-        # X_star, func_X_star, iter_num, function_num, cpu_time = CLSR1(x0, EFR.func, EFR.gfunc, hyper_parameters=ELS_LSR1_hyper_parameters)
+        logger.info("Extended_Freudenstein_Roth 函数")
+        x0 = np.array([-2.] * n)
+        EFR = functions.Extended_Freudenstein_Roth(n)
 
-        # logger.info("非精确线搜索下的LSR1法") 
+   
+       
+        ILS_LSR1_hyper_parameters["LSR1"]["M"] = M[0]
+        logger.info("M={}的LSR1法".format(M[0])) 
+        X_star, func_X_star, iter_num, function_num, cpu_time = CLSR1(x0, EFR.func, EFR.gfunc, hyper_parameters=ILS_LSR1_hyper_parameters)
+        logger.info("压缩LSR1 & M={} & {} & {} & {} & {} & 是 \\\\".format(M[0], round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
+        
+        # ILS_LSR1_hyper_parameters["LSR1"]["M"] = M[1]
+        # logger.info("M={}的LSR1法".format(M[1])) 
         # X_star, func_X_star, iter_num, function_num, cpu_time = CLSR1(x0, EFR.func, EFR.gfunc, hyper_parameters=ILS_LSR1_hyper_parameters)
-
-        # logger.info("GLL线搜索下的LSR1法") 
-        # X_star, func_X_star, iter_num, function_num, cpu_time = CLSR1(x0, EFR.func, EFR.gfunc, hyper_parameters=GLL_LSR1_hyper_parameters)
+        # logger.info("压缩LSR1 & M={} & {} & {} & {} & {} & 是 \\\\".format(M[1], round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
+        
+        # ILS_LSR1_hyper_parameters["LSR1"]["M"] = M[2]
+        # logger.info("M={}的LSR1法".format(M[2])) 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = CLSR1(x0, EFR.func, EFR.gfunc, hyper_parameters=ILS_LSR1_hyper_parameters)
+        # logger.info("压缩LSR1 & M={} & {} & {} & {} & {} & 是 \\\\".format(M[2], round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
         
         # logger.info("Extended_Rosenbrock 函数")
         # ER = functions.Extended_Rosenbrock(n)
+        # x0 = np.zeros(n)
         # t = np.array(range(int(n / 2)))
         # x0[2 * t] = -1.2
         # x0[2 * t + 1] = 1
-        # logger.info("精确线搜索下的LSR1法") 
-        # X_star, func_X_star, iter_num, function_num, cpu_time = CLSR1(x0, ER.func, ER.gfunc, hyper_parameters=ELS_LSR1_hyper_parameters)
 
-        # logger.info("非精确线搜索下的LSR1法") 
+        # ILS_LSR1_hyper_parameters["LSR1"]["M"] = M[0]
+        # logger.info("M={}的LSR1法".format(M[0])) 
         # X_star, func_X_star, iter_num, function_num, cpu_time = CLSR1(x0, ER.func, ER.gfunc, hyper_parameters=ILS_LSR1_hyper_parameters)
+        # logger.info("压缩LSR1 & M={} & {} & {} & {} & {} & 是 \\\\".format(M[0], round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
+        
+        # ILS_LSR1_hyper_parameters["LSR1"]["M"] = M[1]
+        # logger.info("M={}的LSR1法".format(M[1])) 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = CLSR1(x0, ER.func, ER.gfunc, hyper_parameters=ILS_LSR1_hyper_parameters)
+        # logger.info("压缩LSR1 & M={} & {} & {} & {} & {} & 是 \\\\".format(M[1], round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
+        
 
-        # logger.info("GLL线搜索下的LSR1法") 
-        # X_star, func_X_star, iter_num, function_num, cpu_time = CLSR1(x0, ER.func, ER.gfunc, hyper_parameters=GLL_LSR1_hyper_parameters)
+        # ILS_LSR1_hyper_parameters["LSR1"]["M"] = M[2]
+        # logger.info("M={}的LSR1法".format(M[2])) 
+        # X_star, func_X_star, iter_num, function_num, cpu_time = CLSR1(x0, ER.func, ER.gfunc, hyper_parameters=ILS_LSR1_hyper_parameters)
+        # logger.info("压缩LSR1 & M={} & {} & {} & {} & {} & 是 \\\\".format(M[2], round(func_X_star, 5), iter_num, function_num, round(cpu_time, 2)))
         
-        logger.info("Trigonometric 函数")
-        x0 = np.array([1/n] * int(n))
-        f_funciton = functions.trigonometric
-        g_function = functions.g_trigonometric
-        G_function = functions.G_trigonometric
-        logger.info("精确线搜索下的LSR1法") 
-        X_star, func_X_star, iter_num, function_num, cpu_time = CLSR1(x0, f_funciton, g_function, hyper_parameters=ELS_LSR1_hyper_parameters)
-        logger.info("压缩LSR1 & ELS & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+       
+        # logger.info("Trigonometric 函数")
+        # x0 = np.array([1/n] * int(n))
+        # f_funciton = functions.trigonometric
+        # g_function = functions.g_trigonometric
+        # G_function = functions.G_trigonometric
         
-        logger.info("非精确线搜索下的LSR1法") 
-        X_star, func_X_star, iter_num, function_num, cpu_time  = CLSR1(x0, f_funciton, g_function, hyper_parameters=ILS_LSR1_hyper_parameters)
-        logger.info("压缩LSR1 & ILS & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        # ILS_LSR1_hyper_parameters["LSR1"]["M"] = M[0]
+        # logger.info("M={}的LSR1法".format(M[0])) 
+        # X_star, func_X_star, iter_num, function_num, cpu_time  = CLSR1(x0, f_funciton, g_function, hyper_parameters=ILS_LSR1_hyper_parameters)
+        # logger.info("压缩LSR1 & M={} & {} & {} & {} & {} & 是 \\\\".format(M[0], format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
         
-        logger.info("GLL线搜索下的LSR1法") 
-        X_star, func_X_star, iter_num, function_num, cpu_time  = CLSR1(x0, f_funciton, g_function, hyper_parameters=GLL_LSR1_hyper_parameters)
-        logger.info("压缩LSR1 & GLL & {} & {} & {} & {} & 是 \\\\".format(format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
+        # ILS_LSR1_hyper_parameters["LSR1"]["M"] = M[1]
+        # logger.info("M={}的LSR1法".format(M[1])) 
+        # X_star, func_X_star, iter_num, function_num, cpu_time  = CLSR1(x0, f_funciton, g_function, hyper_parameters=GLL_LSR1_hyper_parameters)
+        # logger.info("压缩LSR1 & M={} & {} & {} & {} & {} & 是 \\\\".format(M[1], format(func_X_star, ".4e"), iter_num, function_num, round(cpu_time, 2)))
         
