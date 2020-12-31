@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 @with_goto
-def basic_newton(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="ELS", use_modified_Cholesky=True, epsilon=1e-5, max_epoch=1000):
+def basic_newton(X, func, gfunc, hess_func, hyper_parameters=None, search_mode="ELS", use_modified_Cholesky=True, epsilon=1e-5, max_epoch=1000):
     """[使用基本牛顿法极小值点
          d = -G_k^{-1} * g_k]
 
@@ -23,7 +23,7 @@ def basic_newton(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode=
         X ([np.array]): [Input X]
         func ([回调函数]): [目标函数]
         gfunc ([回调函数]): [目标函数的一阶导函数]
-        hess_funct ([回调函数]): [目标函数的Hessian矩阵]
+        hess_func ([回调函数]): [目标函数的Hessian矩阵]
         hyper_parameters: (Dic): 超参数，超参数中包括：
             search_mode (str, optional): [线搜索的模式（选择精确线搜索还是非精确线搜索）]. Defaults to 'ELS'. ['ELS', 'ILS']
             epsilon ([float], optional): [当函数值下降小于epsilon，迭代结束]. Defaults to 1e-5.
@@ -44,7 +44,7 @@ def basic_newton(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode=
     mk = 0 #GLL当中的mk初始值
     #计算下降方向d_k
     label .count_dk
-    G = hess_funct(X)
+    G = hess_func(X)
     g = gfunc(X)
     # 把当前函数值加入func_values
     F = func(X)
@@ -81,7 +81,7 @@ def basic_newton(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode=
     goto .count_dk
 
 @with_goto
-def damp_newton(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="ELS", use_modified_Cholesky=True, epsilon=1e-5, max_epoch=1000):
+def damp_newton(X, func, gfunc, hess_func, hyper_parameters=None, search_mode="ELS", use_modified_Cholesky=True, epsilon=1e-5, max_epoch=1000):
     """[使用阻尼牛顿法极小值点
          d = -G_k^{-1} * g_k]
 
@@ -89,7 +89,7 @@ def damp_newton(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="
         X ([np.array]): [Input X]
         func ([回调函数]): [目标函数]
         gfunc ([回调函数]): [目标函数的一阶导函数]
-        hess_funct ([回调函数]): [目标函数的Hessian矩阵]
+        hess_func ([回调函数]): [目标函数的Hessian矩阵]
         hyper_parameters: (Dic): 超参数，超参数中包括：
             search_mode (str, optional): [线搜索的模式（选择精确线搜索还是非精确线搜索）]. Defaults to 'ELS'. ['ELS', 'ILS']
             epsilon ([float], optional): [当函数值下降小于epsilon，迭代结束]. Defaults to 1e-5.
@@ -110,7 +110,7 @@ def damp_newton(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="
     mk = 0 #GLL当中的mk初始值
     #计算下降方向d_k
     label .count_dk
-    G = hess_funct(X)
+    G = hess_func(X)
     g = gfunc(X)
     # 把当前函数值加入func_values
     F = func(X)
@@ -194,7 +194,7 @@ def negative_curvature(LT, D, E):
         return d
 
 @with_goto
-def GM_newton(X, func, gfunc, hess_funct, hyper_parameters=None, zeta=1e-2, search_mode="ELS", epsilon=1e-5, max_epoch=1000):
+def GM_newton(X, func, gfunc, hess_func, hyper_parameters=None, zeta=1e-2, search_mode="ELS", epsilon=1e-5, max_epoch=1000):
     """使用Gill Murray稳定牛顿法求极小值点
          d = -G_k^{-1} * g_k]
 
@@ -202,7 +202,7 @@ def GM_newton(X, func, gfunc, hess_funct, hyper_parameters=None, zeta=1e-2, sear
         X ([np.array]): [Input X]
         func ([回调函数]): [目标函数]
         gfunc ([回调函数]): [目标函数的一阶导函数]
-        hess_funct ([回调函数]): [目标函数的Hessian矩阵]
+        hess_func ([回调函数]): [目标函数的Hessian矩阵]
         hyper_parameters: (Dic): 超参数，超参数中包括：
             zeta ([float], optional): [当gk的模大于zeta， 求解方程得到下降方向]. Defaults to 1e-2.
             search_mode (str, optional): [线搜索的模式（选择精确线搜索还是非精确线搜索）]. Defaults to 'ELS'. ['ELS', 'ILS']
@@ -226,7 +226,7 @@ def GM_newton(X, func, gfunc, hess_funct, hyper_parameters=None, zeta=1e-2, sear
     # 步2：计算g和G
     label .step2
     g = gfunc(X)
-    G = hess_funct(X)
+    G = hess_func(X)
     # 把当前函数值加入func_values
     function_k += 1
     F = func(X)

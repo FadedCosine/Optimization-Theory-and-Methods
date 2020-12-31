@@ -41,14 +41,14 @@ def descent_by_general_inverse(X, L, D, gfunc):
     return np.array(descent)
     
 @with_goto
-def Fletcher_Freeman(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="ELS", epsilon=1e-5, max_epoch=1000):
+def Fletcher_Freeman(X, func, gfunc, hess_func, hyper_parameters=None, search_mode="ELS", epsilon=1e-5, max_epoch=1000):
     """Fletcher_Freeman方法求极小值点
 
     Args:
         X ([np.array]): [Input X]
         func ([回调函数]): [目标函数]
         gfunc ([回调函数]): [目标函数的一阶导函数]
-        hess_funct ([回调函数]): [目标函数的Hessian矩阵]
+        hess_func ([回调函数]): [目标函数的Hessian矩阵]
         hyper_parameters: (json): 超参数，超参数中包括：
             search_mode (str, optional): [线搜索的模式（选择精确线搜索还是非精确线搜索）]. Defaults to 'ELS'. ['ELS', 'ILS']
             epsilon ([float], optional): [当函数值下降小于epsilon，迭代结束]. Defaults to 1e-5.
@@ -68,7 +68,7 @@ def Fletcher_Freeman(X, func, gfunc, hess_funct, hyper_parameters=None, search_m
      
     label .step2
     
-    G = hess_funct(X)
+    G = hess_func(X)
     function_k += 1
     F = func(X)
     func_values.append(F)

@@ -17,7 +17,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 @with_goto
-def inexact_newton_method(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="ILS", eta_mode=1, safeguard=True, eta0=0.5, gamma=1, sigma=1.5, epsilon=1e-5, max_epoch=1000):
+def inexact_newton_method(X, func, gfunc, hess_func, hyper_parameters=None, search_mode="ILS", eta_mode=1, safeguard=True, eta0=0.5, gamma=1, sigma=1.5, epsilon=1e-5, max_epoch=1000):
     """[使用非精确牛顿法极小值点
          d = -G_k^{-1} * g_k]
 
@@ -25,7 +25,7 @@ def inexact_newton_method(X, func, gfunc, hess_funct, hyper_parameters=None, sea
         X ([np.array]): [Input X]
         func ([回调函数]): [目标函数]
         gfunc ([回调函数]): [目标函数的一阶导函数]
-        hess_funct ([回调函数]): [目标函数的Hessian矩阵]
+        hess_func ([回调函数]): [目标函数的Hessian矩阵]
         hyper_parameters: (Dic): 超参数，超参数中包括：
             search_mode (str, optional): [线搜索的模式（选择精确线搜索还是非精确线搜索）]. Defaults to 'ELS'. ['ELS', 'ILS']
             eta_mode (int, optional): [{eta}选择的方式]. Defaults to 1. [1, 2]
@@ -59,7 +59,7 @@ def inexact_newton_method(X, func, gfunc, hess_funct, hyper_parameters=None, sea
     G_pre = None
     d_pre = None
     g = gfunc(X)
-    G = hess_funct(X)
+    G = hess_func(X)
     eta_pre = None
     # 把当前函数值加入func_values
     F = func(X)
@@ -124,7 +124,7 @@ def inexact_newton_method(X, func, gfunc, hess_funct, hyper_parameters=None, sea
     G_pre = G
     d_pre = d
     g = gfunc(X_new)
-    G = hess_funct(X)
+    G = hess_func(X)
     
     logging.info("g is {}".format(g))
     logger.info("g的范数为{g}，epsilon * max(1, |x_k|)为{xk}".format(g = np.linalg.norm(g), xk = epsilon * max(1, np.linalg.norm(X_new))))
@@ -145,14 +145,14 @@ def inexact_newton_method(X, func, gfunc, hess_funct, hyper_parameters=None, sea
             
 
 @with_goto
-def INBM(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="ILS", eta_mode=1, safeguard=True, eta0=0.5, gamma=1, sigma=1.5, t=1e-4, eta_max=0.9, theta_min=0.1, theta_max=0.5, epsilon=1e-5, max_epoch=1000):
+def INBM(X, func, gfunc, hess_func, hyper_parameters=None, search_mode="ILS", eta_mode=1, safeguard=True, eta0=0.5, gamma=1, sigma=1.5, t=1e-4, eta_max=0.9, theta_min=0.1, theta_max=0.5, epsilon=1e-5, max_epoch=1000):
     """[summary]
 
     Args:
         X ([np.array]): [Input X]
         func ([回调函数]): [目标函数]
         gfunc ([回调函数]): [目标函数的一阶导函数]
-        hess_funct ([回调函数]): [目标函数的Hessian矩阵]
+        hess_func ([回调函数]): [目标函数的Hessian矩阵]
         hyper_parameters: (Dic): 超参数，超参数中包括：
             search_mode (str, optional): [线搜索的模式（选择精确线搜索还是非精确线搜索）]. Defaults to 'ELS'. ['ELS', 'ILS']
             eta_mode (int, optional): [{eta}选择的方式]. Defaults to 1. [1, 2]
@@ -191,7 +191,7 @@ def INBM(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="ILS", e
     G_pre = None
     d_pre = None
     g = gfunc(X)
-    G = hess_funct(X)
+    G = hess_func(X)
     eta_pre = None
     # 把当前函数值加入func_values
     F = func(X)
@@ -272,7 +272,7 @@ def INBM(X, func, gfunc, hess_funct, hyper_parameters=None, search_mode="ILS", e
     G_pre = G
     d_pre = d
     g = gfunc(X_new)
-    G = hess_funct(X)
+    G = hess_func(X)
     
     logging.info("g is {}".format(g))
     logger.info("g的范数为{g}，epsilon * max(1, |x_k|)为{xk}".format(g = np.linalg.norm(g), xk = epsilon * max(1, np.linalg.norm(X_new))))
