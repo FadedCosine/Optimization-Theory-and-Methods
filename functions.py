@@ -95,147 +95,6 @@ def G_wood(X, G_lists=None, symbols_list=None):
     if G_lists is not None:
         return np.array([[G_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_list, X)]) for G_xi in G_list] for G_list in G_lists], 'float')
 
-def extended_powell_singular(X):
-    assert len(X) % 4 == 0, "Len of X must be a multiple of 4"
-    return sum(
-        (sum(((X[idx] + 10 * X[idx + 1])**2,
-                5 * (X[idx+2] - X[idx+3])**2,
-                (X[idx+1] - 2 * X[idx+2])**4,
-                10 * (X[idx] - X[idx+3])**4,
-            )) for idx in range(0, len(X), 4)))
-
-def diff_extended_powell_singular(m):
-    """[extended_powell_singular 函数的导函数]
-    Args:
-        m ([int]): X的维度
-    """
-    assert m % 4 == 0, "Len of X must be a multiple of 4"
-    symbols_X = symbols("x:{}".format(m))
-    eps_func = 0
-    for idx in range(0, m, 4):
-        eps_func += (symbols_X[idx] + 10 * symbols_X[idx + 1])**2 + \
-                5 * (symbols_X[idx+2] - symbols_X[idx+3])**2 + \
-                (symbols_X[idx+1] - 2 * symbols_X[idx+2])**4 + \
-                10 * (symbols_X[idx] - symbols_X[idx+3])**4
-    
-    diff_list = []
-    for symbol in symbols_X:
-        diff_list.append(diff(eps_func, symbol))
-    return diff_list, symbols_X
-def g_EPS(X):
-    """ 输入X,手动计算EPS的一阶导数
-    Args:
-        X ([np.array]): Input X
-    Returns:
-        [[np.array]]: 输出在X处的
-    """
-    m = len(X)
-    assert m % 4 == 0  # m should be exactly divisible by 4
-    g = np.zeros(m)
-    for iter in range(0, int(m / 4)):
-        g[4 * iter] = 2 * (X[4 * iter] + 10 * X[4 * iter + 1]) + 40 * math.pow(
-            X[4 * iter] - X[4 * iter + 3], 3)
-        g[4 * iter + 1] = 20 * (X[4 * iter] + 10 * X[4 * iter + 1]) + 4 * math.pow(
-            X[4 * iter + 1] - 2 * X[4 * iter + 2], 3)
-        g[4 * iter + 2] = 10 * (X[4 * iter + 2] - X[4 * iter + 3]) - 8 * math.pow(X[4 * iter + 1] - 2 * X[4 * iter + 2],
-                                                                                  3)
-        g[4 * iter + 3] = -10 * (X[4 * iter + 2] - X[4 * iter + 3]) - 40 * math.pow(X[4 * iter] - X[4 * iter + 3],
-                                                                                    3)
-    return g
-
-def G_EPS(X):
-    """ 输入X,手动计算EPS的hess矩阵
-    Args:
-        X ([np.array]): Input X
-    Returns:
-        [[np.array]]: 输出在X处的hess矩阵值
-    """
-    m = len(X)
-    assert m % 4 == 0  # m should be exactly divisible by 4
-    G = np.zeros((m, m))
-    for iter in range(0, int(m / 4)):
-        x1 = X[4 * iter]
-        x2 = X[4 * iter + 1]
-        x3 = X[4 * iter + 2]
-        x4 = X[4 * iter + 3]
-
-        G[4 * iter][4 * iter] = 2 + 120 * (x1 - x4) ** 2
-        G[4 * iter][4 * iter + 1] = 20
-        G[4 * iter][4 * iter + 3] = -120 * (x1 - x4) ** 2
-
-        G[4 * iter + 1][4 * iter] = 20
-        G[4 * iter + 1][4 * iter + 1] = 200 + 12 * (x2 - 2 * x3) ** 2
-        G[4 * iter + 1][4 * iter + 2] = -24 * (x2 - 2 * x3) ** 2
-        
-        G[4 * iter + 2][4 * iter + 1] = G[4 * iter + 1][4 * iter + 2]
-        G[4 * iter + 2][4 * iter + 2] = 10 + 48 * (x2 - 2 * x3) ** 2
-        G[4 * iter + 2][4 * iter + 3] = -10
-        
-        G[4 * iter + 3][4 * iter] = G[4 * iter][4 * iter + 3]
-        G[4 * iter + 3][4 * iter + 2] = G[4 * iter + 2][4 * iter + 3]
-        G[4 * iter + 3][4 * iter + 3] = 10 + 120 * (x1 - x4) ** 2
-    return G
-
-def trigonometric(X):
-    n = len(X)
-    sum_cos = sum((math.cos(x) for x in X))
-    return sum(
-        ( (n - sum_cos + (idx + 1) * (1 - math.cos(x)) - math.sin(x)) ** 2 for idx, x in enumerate(X))
-    )
-
-def diff_trigonometric(m):
-    """[trigonometric 函数的导函数]
-    Args:
-        m ([int]): X的维度
-    """
-    symbols_X = symbols("x:{}".format(m))
-    sum_cos = sum((sympy.cos(x) for x in symbols_X))
-    trig_func = sum(
-        ( (m - sum_cos + (idx + 1) * (1 - sympy.cos(x)) - sympy.sin(x)) ** 2 for idx, x in enumerate(symbols_X))
-    )
-    diff_list = []
-    for symbol in symbols_X:
-        diff_list.append(diff(trig_func, symbol))
-    return diff_list, symbols_X
- 
-def g_trigonometric(x):
-    """ 输入X,手动计算trigonometric的一阶导数
-    Args:
-        X ([np.array]): Input X
-    Returns:
-        [[np.array]]: 输出在X处的一阶导数值
-    """
-    n = len(x)
-    X = x.reshape(-1,1)
-    one = np.array([i + 1 for i in range(n)]).reshape(-1, 1)
-    constant = n - sum(cos(X))
-    gamma = constant + one * (1 - cos(X)) - sin(X)
-    gamma_sum = sum(constant + one * (1 - cos(X)) - sin(X))
-    g = 2 * gamma * (one * sin(X) - cos(X)) + 2 * sin(X) * gamma_sum
-    return g.reshape(n)
-
-def G_trigonometric(x):
-    """ 输入X,手动计算trigonometric的hess矩阵
-    Args:
-        X ([np.array]): Input X
-    Returns:
-        [[np.array]]: 输出在X处的hess矩阵值
-    """
-    n = len(x)
-    X = x.reshape(-1,1)
-    constant = n - sum(cos(X))
-    one = np.array([i + 1 for i in range(n)]).reshape(-1, 1)
-    gamma_sum = sum(constant + one * (1 - cos(X)) - sin(X))
-    diag = 2 * (sin(X) + one * sin(X) - cos(X)) * (one * sin(X) -cos(X)) + 2 * (constant + one * (1 - cos(X)) - sin(X)) * \
-                            (one * cos(X) + sin(X)) + 2 * cos(X) * gamma_sum + 2 * sin(X) * \
-                            (n * sin(X) + one * sin(X) - cos(X))
-    diag = diag.reshape(-1)
-    G = 2 * np.matmul((one * sin(X) - cos(X)), sin(X).T) + 2 * np.matmul(sin(X), (n * sin(X) + one * sin(X) - cos(X)).T)
-    for i in range(n):
-        G[i][i] = diag[i]
-    return G
-
-
 def g_function(X, diff_list=None, symbols_list=None):
     """ 输入一阶导数的符号表达式，计算一阶导数值
     Args:
@@ -278,9 +137,137 @@ def G_function(X, G_lists=None, symbols_list=None):
     if G_lists is not None:
         return np.array([[G_xi.subs([(symbol, x_i) for symbol, x_i in zip(symbols_list, X)]) for G_xi in G_list] for G_list in G_lists], 'float')
 
+class Wood:
+    def __init__(self, n):
+        self.n = n
+    
+    def func(self, X):
+        x1 = X[0]
+        x2 = X[1]
+        x3 = X[2]
+        x4 = X[3]
+        return sum((
+            100 * (x1 * x1 - x2)**2,
+            (x1 - 1)**2,
+            (x3 - 1)**2,
+            90 * (x3 * x3 - x4)**2,
+            10.1 * ((x2 - 1)**2 + (x4 - 1)**2),
+            19.8 * (x2 - 1) * (x4 - 1),
+        ))
+
+class EPS:
+    def __init__(self, n):
+        assert n % 4 == 0, "Len of X must be a multiple of 4"
+        self.n = n
+    
+    def func(self, X):
+        
+        return sum(
+            (sum(((X[idx] + 10 * X[idx + 1])**2,
+                    5 * (X[idx+2] - X[idx+3])**2,
+                    (X[idx+1] - 2 * X[idx+2])**4,
+                    10 * (X[idx] - X[idx+3])**4,
+                )) for idx in range(0, len(X), 4)))
+    def gfunc(self, X):
+        """ 输入X,手动计算EPS的一阶导数
+        Args:
+            X ([np.array]): Input X
+        Returns:
+            [[np.array]]: 输出在X处的
+        """
+        m = len(X)
+        assert m % 4 == 0  # m should be exactly divisible by 4
+        g = np.zeros(m)
+        for iter in range(0, int(m / 4)):
+            g[4 * iter] = 2 * (X[4 * iter] + 10 * X[4 * iter + 1]) + 40 * math.pow(
+                X[4 * iter] - X[4 * iter + 3], 3)
+            g[4 * iter + 1] = 20 * (X[4 * iter] + 10 * X[4 * iter + 1]) + 4 * math.pow(
+                X[4 * iter + 1] - 2 * X[4 * iter + 2], 3)
+            g[4 * iter + 2] = 10 * (X[4 * iter + 2] - X[4 * iter + 3]) - 8 * math.pow(X[4 * iter + 1] - 2 * X[4 * iter + 2],
+                                                                                    3)
+            g[4 * iter + 3] = -10 * (X[4 * iter + 2] - X[4 * iter + 3]) - 40 * math.pow(X[4 * iter] - X[4 * iter + 3],
+                                                                                        3)
+        return g
+    
+    def hess_func(self, X):
+        """ 输入X,手动计算EPS的hess矩阵
+        Args:
+            X ([np.array]): Input X
+        Returns:
+            [[np.array]]: 输出在X处的hess矩阵值
+        """
+        m = len(X)
+        assert m % 4 == 0  # m should be exactly divisible by 4
+        G = np.zeros((m, m))
+        for iter in range(0, int(m / 4)):
+            x1 = X[4 * iter]
+            x2 = X[4 * iter + 1]
+            x3 = X[4 * iter + 2]
+            x4 = X[4 * iter + 3]
+
+            G[4 * iter][4 * iter] = 2 + 120 * (x1 - x4) ** 2
+            G[4 * iter][4 * iter + 1] = 20
+            G[4 * iter][4 * iter + 3] = -120 * (x1 - x4) ** 2
+
+            G[4 * iter + 1][4 * iter] = 20
+            G[4 * iter + 1][4 * iter + 1] = 200 + 12 * (x2 - 2 * x3) ** 2
+            G[4 * iter + 1][4 * iter + 2] = -24 * (x2 - 2 * x3) ** 2
+            
+            G[4 * iter + 2][4 * iter + 1] = G[4 * iter + 1][4 * iter + 2]
+            G[4 * iter + 2][4 * iter + 2] = 10 + 48 * (x2 - 2 * x3) ** 2
+            G[4 * iter + 2][4 * iter + 3] = -10
+            
+            G[4 * iter + 3][4 * iter] = G[4 * iter][4 * iter + 3]
+            G[4 * iter + 3][4 * iter + 2] = G[4 * iter + 2][4 * iter + 3]
+            G[4 * iter + 3][4 * iter + 3] = 10 + 120 * (x1 - x4) ** 2
+        return G
+
+
 class Trigonometric:
     def __init__(self, n):
         self.n = n
+    def func(self, X):
+        n = len(X)
+        sum_cos = sum((math.cos(x) for x in X))
+        return sum(
+            ( (n - sum_cos + (idx + 1) * (1 - math.cos(x)) - math.sin(x)) ** 2 for idx, x in enumerate(X))
+        )
+    def gfunc(self, X):
+        """ 输入X,手动计算trigonometric的一阶导数
+        Args:
+            X ([np.array]): Input X
+        Returns:
+            [[np.array]]: 输出在X处的一阶导数值
+        """
+        n = len(x)
+        X = x.reshape(-1,1)
+        one = np.array([i + 1 for i in range(n)]).reshape(-1, 1)
+        constant = n - sum(cos(X))
+        gamma = constant + one * (1 - cos(X)) - sin(X)
+        gamma_sum = sum(constant + one * (1 - cos(X)) - sin(X))
+        g = 2 * gamma * (one * sin(X) - cos(X)) + 2 * sin(X) * gamma_sum
+        return g.reshape(n)
+    
+    def hess_func(self, X):
+        """ 输入X,手动计算trigonometric的hess矩阵
+        Args:
+            X ([np.array]): Input X
+        Returns:
+            [[np.array]]: 输出在X处的hess矩阵值
+        """
+        n = len(x)
+        X = x.reshape(-1,1)
+        constant = n - sum(cos(X))
+        one = np.array([i + 1 for i in range(n)]).reshape(-1, 1)
+        gamma_sum = sum(constant + one * (1 - cos(X)) - sin(X))
+        diag = 2 * (sin(X) + one * sin(X) - cos(X)) * (one * sin(X) -cos(X)) + 2 * (constant + one * (1 - cos(X)) - sin(X)) * \
+                                (one * cos(X) + sin(X)) + 2 * cos(X) * gamma_sum + 2 * sin(X) * \
+                                (n * sin(X) + one * sin(X) - cos(X))
+        diag = diag.reshape(-1)
+        G = 2 * np.matmul((one * sin(X) - cos(X)), sin(X).T) + 2 * np.matmul(sin(X), (n * sin(X) + one * sin(X) - cos(X)).T)
+        for i in range(n):
+            G[i][i] = diag[i]
+        return G
         
 class Penalty1:
     """
