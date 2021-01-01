@@ -7,7 +7,8 @@ import utils
 import functools
 import copy
 from scipy.sparse.linalg import gmres
-from Trust_Region.hebden import Hebden_method, Hebden_method_2
+from Trust_Region.hebden import Hebden_method
+from Trust_Region.sorensen import sorensen
 import logging
 logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
                     datefmt='%d-%m-%Y:%H:%M:%S')
