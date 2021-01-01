@@ -5,9 +5,8 @@ import time
 from goto import with_goto
 import utils
 import functools
-import copy
 from scipy.sparse.linalg import gmres
-from Trust_Region.hebden import Hebden_method
+from Trust_Region.hebden import hebden
 from Trust_Region.sorensen import sorensen
 from Trust_Region.two_subspace_min import two_subspace_min
 import argparse

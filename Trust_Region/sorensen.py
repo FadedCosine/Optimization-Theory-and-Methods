@@ -1,11 +1,7 @@
 import functions
 import numpy as np
 import math
-import time
 from goto import with_goto
-import utils
-import functools
-import copy
 from utils import is_pos_def
 import logging
 logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',

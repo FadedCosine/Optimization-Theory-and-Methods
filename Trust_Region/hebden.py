@@ -1,4 +1,3 @@
-import copy
 import numpy as np
 from goto import with_goto
 from utils import is_pos_def
@@ -9,7 +8,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 @with_goto
-def Hebden_method(X, func, gfunc, hess_func, delta, hyper_parameters=None, v_0=1e-2, epsilon=1e-10, max_epoch=10000):
+def hebden(X, func, gfunc, hess_func, delta, hyper_parameters=None, v_0=1e-2, epsilon=1e-10, max_epoch=10000):
     """ Hebden方法求解TR子问题
 
     Args:
