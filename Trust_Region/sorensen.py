@@ -6,6 +6,7 @@ from goto import with_goto
 import utils
 import functools
 import copy
+from utils import is_pos_def
 import logging
 logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
                     datefmt='%d-%m-%Y:%H:%M:%S')
@@ -39,12 +40,10 @@ def sorensen(X, func, gfunc, hess_func, delta, hyper_parameters=None, v_0=1e-2, 
     I = np.identity(len(X))
     G_org = hess_func(X)
     G = G_org
-    eigenvalue, eigen_vector = np.linalg.eig(G)
     # G非正定
-    while np.any(eigenvalue <= 0):
+    while not is_pos_def(G):
         G = G + v_k * I
         v_k = v_k * 4
-        eigenvalue, eigen_vector = np.linalg.eig(G)
     # 此时的G为 G0 + vk I
     
     inv_G = np.linalg.inv(G) 

@@ -9,6 +9,8 @@ import copy
 from scipy.sparse.linalg import gmres
 from Trust_Region.hebden import Hebden_method
 from Trust_Region.sorensen import sorensen
+from Trust_Region.two_subspace_min import two_subspace_min
+import argparse
 import logging
 logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
                     datefmt='%d-%m-%Y:%H:%M:%S')
@@ -49,10 +51,10 @@ def trust_region_method(X, func, gfunc, hess_func, hyper_parameters=None, TR_met
     g = gfunc(X)
     G = hess_func(X)
     
-    if np.linalg.norm(g) < epsilon:
+    # if np.linalg.norm(g) < epsilon:
         
-        logger.info("因为满足终止条件，{mode}方法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终用时{time}，最终X={X}，最终函数值={func}".format(mode=TR_method.__name__, iter=k, func_k=function_k, time=end_time-start_time, X=X,func=F))
-        return X, F, k, function_k, end_time-start_time
+    #     logger.info("因为满足终止条件，{mode}方法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终用时{time}，最终X={X}，最终函数值={func}".format(mode=TR_method.__name__, iter=k, func_k=function_k, time=end_time-start_time, X=X,func=F))
+    #     return X, F, k, function_k, end_time-start_time
 
     d, add_func_k = TR_method(X, func, gfunc, hess_func, delta)
     end_time = time.time()
@@ -61,10 +63,10 @@ def trust_region_method(X, func, gfunc, hess_func, hyper_parameters=None, TR_met
 
     X_tmp = X + d
     F_tmp = func(X_tmp)
-    # if abs(F - F_tmp) < epsilon:
-    #     end_time = time.time()
-    #     logger.info("因为满足终止条件，{mode}方法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终用时{time}，最终X={X}，最终函数值={func}".format(mode=search_mode, iter=k, func_k=function_k, time=end_time-start_time, X=X,func=F))
-    #     return X, F, k, function_k, end_time-start_time
+    if abs(F - F_tmp) < epsilon:
+        end_time = time.time()
+        logger.info("因为满足终止条件，{mode}方法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终用时{time}，最终X={X}，最终函数值={func}".format(mode=TR_method.__name__, iter=k, func_k=function_k, time=end_time-start_time, X=X,func=F))
+        return X, F, k, function_k, end_time-start_time
 
 
     q_k = -(g @ d + 0.5 * d @ G @ d)
@@ -86,17 +88,40 @@ def trust_region_method(X, func, gfunc, hess_func, hyper_parameters=None, TR_met
 if __name__ == '__main__':
     Hebden_hyper_parameters = {
         "TR":{
-            "TR_method": Hebden_method,
+            "TR_method": two_subspace_min,
             "delta": 0.5,
         },
         "epsilon": 1e-8,
         "max_epoch": 1000,
     }
-    X = np.array([-3, -1, -3, -1])
-    f_funciton = functions.wood
-    diff_wood_list, symbols_wood_list = functions.diff_wood_expression()
-    g_function = functools.partial(functions.g_wood, diff_list=diff_wood_list, symbols_list=symbols_wood_list)
-    hess_wood_lists, symbols_wood_list = functions.hess_wood_expression()
-    G_function = functools.partial(functions.G_wood, G_lists=hess_wood_lists, symbols_list=symbols_wood_list)
+        
+    parser = argparse.ArgumentParser(description='Optimization') 
+    parser.add_argument("--m", type=int, default=100, help="测试函数的维度")
+    parser.add_argument("--test_fucntion", choices=["Wood", "EPS", "Trig"], type=str, default="EPS", help="测试函数的维度")            
+    args = parser.parse_args()
+    m = args.m
+    if args.test_fucntion == "EPS":
+        X = np.array([3, -1, 0, 1] * int(m//4))
+        test_function = functions.EPS(m)
+        f_funciton = test_function.func
+        g_function = test_function.gfunc
+        G_function = test_function.hess_func
+
+    elif args.test_fucntion == "Trig":
+        X = np.array([1/m] * int(m))
+        test_function = functions.Trigonometric(m)
+        f_funciton = test_function.func
+        g_function = test_function.gfunc
+        G_function = test_function.hess_func
+
+    else:
+        X = np.array([-3, -1, -3, -1])
+        f_funciton = functions.wood
+        diff_wood_list, symbols_wood_list = functions.diff_wood_expression()
+        g_function = functools.partial(functions.g_wood, diff_list=diff_wood_list, symbols_list=symbols_wood_list)
+        hess_wood_lists, symbols_wood_list = functions.hess_wood_expression()
+        G_function = functools.partial(functions.G_wood, G_lists=hess_wood_lists, symbols_list=symbols_wood_list)
 
     trust_region_method(X, f_funciton, g_function, G_function, hyper_parameters=Hebden_hyper_parameters)
+
+

@@ -239,13 +239,13 @@ class Trigonometric:
         Returns:
             [[np.array]]: 输出在X处的一阶导数值
         """
-        n = len(x)
-        X = x.reshape(-1,1)
+        n = len(X)
+        X0 = X.reshape(-1,1)
         one = np.array([i + 1 for i in range(n)]).reshape(-1, 1)
-        constant = n - sum(cos(X))
-        gamma = constant + one * (1 - cos(X)) - sin(X)
-        gamma_sum = sum(constant + one * (1 - cos(X)) - sin(X))
-        g = 2 * gamma * (one * sin(X) - cos(X)) + 2 * sin(X) * gamma_sum
+        constant = n - sum(cos(X0))
+        gamma = constant + one * (1 - cos(X0)) - sin(X0)
+        gamma_sum = sum(constant + one * (1 - cos(X0)) - sin(X0))
+        g = 2 * gamma * (one * sin(X0) - cos(X0)) + 2 * sin(X0) * gamma_sum
         return g.reshape(n)
     
     def hess_func(self, X):
@@ -255,16 +255,16 @@ class Trigonometric:
         Returns:
             [[np.array]]: 输出在X处的hess矩阵值
         """
-        n = len(x)
-        X = x.reshape(-1,1)
+        n = len(X)
+        X0 = X.reshape(-1,1)
         constant = n - sum(cos(X))
         one = np.array([i + 1 for i in range(n)]).reshape(-1, 1)
-        gamma_sum = sum(constant + one * (1 - cos(X)) - sin(X))
-        diag = 2 * (sin(X) + one * sin(X) - cos(X)) * (one * sin(X) -cos(X)) + 2 * (constant + one * (1 - cos(X)) - sin(X)) * \
-                                (one * cos(X) + sin(X)) + 2 * cos(X) * gamma_sum + 2 * sin(X) * \
-                                (n * sin(X) + one * sin(X) - cos(X))
+        gamma_sum = sum(constant + one * (1 - cos(X0)) - sin(X0))
+        diag = 2 * (sin(X0) + one * sin(X0) - cos(X0)) * (one * sin(X0) -cos(X0)) + 2 * (constant + one * (1 - cos(X0)) - sin(X0)) * \
+                                (one * cos(X0) + sin(X0)) + 2 * cos(X0) * gamma_sum + 2 * sin(X0) * \
+                                (n * sin(X0) + one * sin(X0) - cos(X0))
         diag = diag.reshape(-1)
-        G = 2 * np.matmul((one * sin(X) - cos(X)), sin(X).T) + 2 * np.matmul(sin(X), (n * sin(X) + one * sin(X) - cos(X)).T)
+        G = 2 * np.matmul((one * sin(X0) - cos(X0)), sin(X0).T) + 2 * np.matmul(sin(X0), (n * sin(X0) + one * sin(X0) - cos(X0)).T)
         for i in range(n):
             G[i][i] = diag[i]
         return G
