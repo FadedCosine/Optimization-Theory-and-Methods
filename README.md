@@ -7,7 +7,7 @@
 ├── Large_Scale_Methods #有限内存的拟牛顿方法
 |  ├── L_BFGS.py #包括有限内存BFGS和其压缩形式的代码实现
 |  └── L_SR1.py #包括有限内存SR1的压缩形式的代码实现
-├── Line_Search #包含了第一次上机作业中的线搜索程序
+├── Line_Search #包含了线搜索程序
 |  ├── exact_line_search.py # 包含精确线搜索代码：进退法和0.618法的实现
 |  ├── inexact_line_search.py # 非精确线搜索的代码实现，通过参数选择["Armijo Goldstein", "Wolfe Powell", "Strong Wolfe Powell"]不同的准则
 |  └── GLL.py # GLL准则的代码实现
