@@ -87,10 +87,19 @@ def trust_region_method(X, func, gfunc, hess_func, hyper_parameters=None, TR_met
     goto.step2
 
 if __name__ == '__main__':
+    
+        
+    parser = argparse.ArgumentParser(description='Optimization') 
+    parser.add_argument("--m", type=int, default=100, help="测试函数的维度")
+    parser.add_argument("--delta", type=float, default=0.5, help="信赖域问题中delta的取值")
+    parser.add_argument("--test_fucntion", choices=["Wood", "EPS", "Trig", "Penalty1", "EFR", "ER"], type=str, default="EPS", help="测试函数的维度")            
+    args = parser.parse_args()
+    m = args.m
+    delta = args.delta
     Hebden_hyper_parameters = {
         "TR":{
             "TR_method": hebden,
-            "delta": 0.5,
+            "delta": delta,
         },
         "epsilon": 1e-8,
         "max_epoch": 1000,
@@ -98,7 +107,7 @@ if __name__ == '__main__':
     Sorensen_hyper_parameters = {
         "TR":{
             "TR_method": sorensen,
-            "delta": 0.5,
+            "delta": delta,
         },
         "epsilon": 1e-8,
         "max_epoch": 1000,
@@ -106,24 +115,19 @@ if __name__ == '__main__':
     TSM_hyper_parameters = {
         "TR":{
             "TR_method": two_subspace_min,
-            "delta": 0.5,
+            "delta": delta,
         },
         "epsilon": 1e-8,
         "max_epoch": 1000,
     }
-        
-    parser = argparse.ArgumentParser(description='Optimization') 
-    parser.add_argument("--m", type=int, default=100, help="测试函数的维度")
-    parser.add_argument("--test_fucntion", choices=["Wood", "EPS", "Trig"], type=str, default="EPS", help="测试函数的维度")            
-    args = parser.parse_args()
-    m = args.m
+    
     if args.test_fucntion == "EPS":
         X = np.array([3, -1, 0, 1] * int(m//4))
         test_function = functions.EPS(m)
         f_funciton = test_function.func
         g_function = test_function.gfunc
         G_function = test_function.hess_func
-        write_latex_name = "EPS_{}.txt".format(m)
+        write_latex_name = "EPS_{}_delta{}.txt".format(m,delta)
 
     elif args.test_fucntion == "Trig":
         X = np.array([1/m] * int(m))
@@ -131,16 +135,41 @@ if __name__ == '__main__':
         f_funciton = test_function.func
         g_function = test_function.gfunc
         G_function = test_function.hess_func
-        write_latex_name = "Trig_{}.txt".format(m)
+        write_latex_name = "Trig_{}_delta{}.txt".format(m,delta)
 
-    else:
+    elif args.test_fucntion == "Trig":
         X = np.array([-3, -1, -3, -1])
         f_funciton = functions.wood
         diff_wood_list, symbols_wood_list = functions.diff_wood_expression()
         g_function = functools.partial(functions.g_wood, diff_list=diff_wood_list, symbols_list=symbols_wood_list)
         hess_wood_lists, symbols_wood_list = functions.hess_wood_expression()
         G_function = functools.partial(functions.G_wood, G_lists=hess_wood_lists, symbols_list=symbols_wood_list)
-        write_latex_name = "Wood.txt"
+        write_latex_name = "Wood_delta{}.txt".format(delta)
+    elif args.test_fucntion == "Penalty1":
+        X = np.array(range(1, m + 1))
+        test_function = functions.Penalty1(m)
+        f_funciton = test_function.func
+        g_function = test_function.gfunc
+        G_function = test_function.hess_func
+        write_latex_name = "Penalty1_{}_delta{}.txt".format(m,delta)
+    elif args.test_fucntion == "EFR":
+        X = np.array([-2.] * m)
+        test_function = functions.Extended_Freudenstein_Roth(m)
+        f_funciton = test_function.func
+        g_function = test_function.gfunc
+        G_function = test_function.hess_func
+        write_latex_name = "EFR_{}_delta{}.txt".format(m,delta)
+    elif args.test_fucntion == "ER":
+        test_function = functions.Extended_Rosenbrock(m)
+        X = np.zeros(m)
+        t = np.array(range(int(m / 2)))
+        X[2 * t] = -1.2
+        X[2 * t + 1] = 1
+        f_funciton = test_function.func
+        g_function = test_function.gfunc
+        G_function = test_function.hess_func
+        write_latex_name = "ER_{}_delta{}.txt".format(m,delta)
+
 
     logger.info("== " * 20 + " {} ".format(write_latex_name) + "== " * 20)
     write_latex = open(write_latex_name, 'w')
