@@ -45,9 +45,11 @@ def sorensen(X, func, gfunc, hess_func, delta, hyper_parameters=None,  v_0=1e-2,
         # v = random.uniform(-lambda_n, -2 * lambda_n)
         v_k = - 3 / 2 * lambda_n
         G = G + v_k * I
- 
     
-    inv_G = np.linalg.inv(G) 
+    # 和Hebden最大的区别就是在这cholesky分解，用cholesky分解，一是不用次次都求逆，节约了计算量；二是可以用分解出来的结果进行近似迭代
+    L = np.linalg.cholesky(G)
+    inv_L = np.linalg.inv(L) 
+    inv_G = inv_L.T @ inv_L
     g = gfunc(X)
     
     d_v = - inv_G @ g
@@ -55,10 +57,9 @@ def sorensen(X, func, gfunc, hess_func, delta, hyper_parameters=None,  v_0=1e-2,
         return d_v, k
 
     label.step4
-    L = np.linalg.cholesky(G)
-    inv_L = np.linalg.inv(L) 
-    p_l = - inv_G @ g
-    q_l = inv_L @ p_l
+    
+    # d_v = - inv_G @ g
+    q_l = inv_L @ d_v
     abs_d_v = np.linalg.norm(d_v)
     phi_v = abs_d_v - delta 
 
@@ -69,12 +70,16 @@ def sorensen(X, func, gfunc, hess_func, delta, hyper_parameters=None,  v_0=1e-2,
         raise Exception("使用sorensen方法求解TR子问题时，超过最大迭代次数：%d", max_epoch)
 
     # 更新v_k
-    abs_p_l = np.linalg.norm(p_l)
+    abs_d_v = np.linalg.norm(d_v)
     abs_q_l = np.linalg.norm(q_l)
-    v_k = v_k + ((abs_p_l/abs_q_l) ** 2) * (abs_p_l - delta) / delta
+    v_k = v_k + ((abs_d_v/abs_q_l) ** 2) * (abs_d_v - delta) / delta
+
     # 重新计算(G+vI)
     G = G_org + v_k * I
-    inv_G = np.linalg.inv(G)  # 求Hesse矩阵的逆
-    d_v = -np.matmul(inv_G, g)
+    L = np.linalg.cholesky(G)
+    inv_L = np.linalg.inv(L) 
+
+    inv_G = inv_L.T @ inv_L
+    d_v = - inv_G @ g
     k = k + 1
     goto.step4
