@@ -1,6 +1,7 @@
 import functions
 import numpy as np
 import math
+import copy
 from goto import with_goto
 from utils import is_pos_def
 import logging
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 @with_goto
-def sorensen(X, func, gfunc, hess_func, delta, hyper_parameters=None, v_0=1e-2, epsilon=1e-10, max_epoch=10000):
+def sorensen(X, func, gfunc, hess_func, delta, hyper_parameters=None,  v_0=1e-2, epsilon=1e-10, max_epoch=10000):
     """ sorensen求解TR子问题
 
     Args:
@@ -29,25 +30,29 @@ def sorensen(X, func, gfunc, hess_func, delta, hyper_parameters=None, v_0=1e-2, 
         [type]: [description]
     """
     # 初始化
-    k = 0
-    function_k = 0
+    k = 1
     v_k = v_0
 
     I = np.identity(len(X))
     G_org = hess_func(X)
-    G = G_org
-    # G非正定
-    while not is_pos_def(G):
+    G = copy.deepcopy(G_org)
+    # 先判断G是否正定
+
+    if not is_pos_def(G): # G非正定的情况，通过取 v \in {-lambda_n , -2 * lambda_n}，使得G正定
+        values, _vector = np.linalg.eig(G)
+        values = sorted(values)
+        lambda_n = values[0]
+        # v = random.uniform(-lambda_n, -2 * lambda_n)
+        v_k = - 3 / 2 * lambda_n
         G = G + v_k * I
-        v_k = v_k * 4
-    # 此时的G为 G0 + vk I
+ 
     
     inv_G = np.linalg.inv(G) 
     g = gfunc(X)
     
     d_v = - inv_G @ g
     if np.linalg.norm(d_v) < delta:
-        return d_v, function_k
+        return d_v, k
 
     label.step4
     L = np.linalg.cholesky(G)
@@ -59,7 +64,7 @@ def sorensen(X, func, gfunc, hess_func, delta, hyper_parameters=None, v_0=1e-2, 
 
     # 判断终止准则是否成立
     if abs(phi_v) <= epsilon:
-        return d_v, function_k
+        return d_v, k
     if k > max_epoch:
         raise Exception("使用sorensen方法求解TR子问题时，超过最大迭代次数：%d", max_epoch)
 

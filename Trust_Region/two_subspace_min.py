@@ -10,7 +10,7 @@ logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:
 logging.getLogger().setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-def two_subspace_min(X, func, gfunc, hess_func, delta, hyper_parameters=None, v_0=1e-2, epsilon=1e-10, max_epoch=10000):
+def two_subspace_min(X, func, gfunc, hess_func, delta, hyper_parameters=None, epsilon=1e-10, max_epoch=10000):
     """ 二维子空间极小化方法 求解TR子问题，注意此方法不是迭代方法
 
     Args:
@@ -20,7 +20,6 @@ def two_subspace_min(X, func, gfunc, hess_func, delta, hyper_parameters=None, v_
         hess_func ([回调函数]): [目标函数的Hessian矩阵]
         delta ([float]): [TR子问题约束中的delta]
         hyper_parameters: (Dic): 超参数，超参数中包括：
-            v_0 ([float]], optional): [v的初值]. Defaults to 1e-2.
             epsilon ([float], optional): [解决浮点数相减不精确的问题，用于判等]. Defaults to 1e-10.
             max_epoch (int, optional): [description]. Defaults to 1000.
 
@@ -28,7 +27,6 @@ def two_subspace_min(X, func, gfunc, hess_func, delta, hyper_parameters=None, v_
         [type]: [description]
     """
     k = 0
-    function_k = 0
 
     I = np.identity(len(X))
     G = hess_func(X)
@@ -71,7 +69,7 @@ def two_subspace_min(X, func, gfunc, hess_func, delta, hyper_parameters=None, v_
     alpha = u[0]
     beta = u[1]
     d = alpha * g + beta * inv_G_g
-    return d, function_k
+    return d, k
 
 
   

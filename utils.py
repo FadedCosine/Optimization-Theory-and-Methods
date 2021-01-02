@@ -182,16 +182,15 @@ def Bunch_Parlett(A):
 
 def is_pos_def(A):
     """
-    判断矩阵是否正定
+    判断对称矩阵是否正定
     """
-    if np.array_equal(A, A.T):
-        try:
-            np.linalg.cholesky(A)
-            return True
-        except np.linalg.LinAlgError:
-            return False
-    else:
+    
+    try:
+        np.linalg.cholesky(A)
+        return True
+    except np.linalg.LinAlgError:
         return False
+   
 if __name__ == '__main__':
     G = np.array([[1, 1,       2], 
                   [1, 1+1e-20, 3],

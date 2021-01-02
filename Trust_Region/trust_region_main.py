@@ -17,7 +17,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 @with_goto
-def trust_region_method(X, func, gfunc, hess_func, hyper_parameters=None, TR_method=Hebden_method, delta=0.1, epsilon=1e-9, max_epoch=1000):
+def trust_region_method(X, func, gfunc, hess_func, hyper_parameters=None, TR_method=hebden, delta=0.1, epsilon=1e-9, max_epoch=1000):
     
     """[ 信赖域算法的主要框架，可选择不同的子问题求解方法
 
@@ -41,6 +41,7 @@ def trust_region_method(X, func, gfunc, hess_func, hyper_parameters=None, TR_met
         max_epoch = hyper_parameters["max_epoch"]
     n = len(X)
     k = 0
+    TR_iter_k = 0
     function_k = 0
     start_time = time.time()
 
@@ -53,19 +54,20 @@ def trust_region_method(X, func, gfunc, hess_func, hyper_parameters=None, TR_met
     # if np.linalg.norm(g) < epsilon:
         
     #     logger.info("因为满足终止条件，{mode}方法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终用时{time}，最终X={X}，最终函数值={func}".format(mode=TR_method.__name__, iter=k, func_k=function_k, time=end_time-start_time, X=X,func=F))
-    #     return X, F, k, function_k, end_time-start_time
+    #     return X, F, k, function_k, TR_iter_k, end_time-start_time
 
-    d, add_func_k = TR_method(X, func, gfunc, hess_func, delta)
+    d, add_iter_k = TR_method(X, func, gfunc, hess_func, delta)
+    TR_iter_k += add_iter_k
     end_time = time.time()
-    function_k += add_func_k + 1
-    logger.info("迭代第{iter}轮，当前函数调用次数{func_k}，当前用时{time}，当前X取值为{X}，当前g的取值为{g}, 下降方向为{d}，当前函数值为{func_x}".format(iter=k,func_k=function_k,time=end_time-start_time,X=X, g=g, d=d,func_x=round(F, 8)))
+    function_k += 1
+    logger.info("迭代第{iter}轮，当前函数调用次数{func_k}，求解TR子问题共迭代次数{TR_k}，当前用时{time}，当前X取值为{X}，当前g的取值为{g}, 下降方向为{d}，当前函数值为{func_x}".format(iter=k,func_k=function_k,TR_k=TR_iter_k, time=end_time-start_time,X=X, g=g, d=d,func_x=round(F, 8)))
 
     X_tmp = X + d
     F_tmp = func(X_tmp)
     if abs(F - F_tmp) < epsilon:
         end_time = time.time()
-        logger.info("因为满足终止条件，{mode}方法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，最终用时{time}，最终X={X}，最终函数值={func}".format(mode=TR_method.__name__, iter=k, func_k=function_k, time=end_time-start_time, X=X,func=F))
-        return X, F, k, function_k, end_time-start_time
+        logger.info("因为满足终止条件，{mode}方法，迭代结束，迭代轮次{iter}，函数调用次数{func_k}，求解TR子问题共迭代次数{TR_k}，最终用时{time}，最终X={X}，最终函数值={func}".format(mode=TR_method.__name__, iter=k, func_k=function_k,TR_k=TR_iter_k, time=end_time-start_time, X=X,func=F))
+        return X, F, k, function_k, TR_iter_k, end_time-start_time
 
 
     q_k = -(g @ d + 0.5 * d @ G @ d)
@@ -87,6 +89,22 @@ def trust_region_method(X, func, gfunc, hess_func, hyper_parameters=None, TR_met
 if __name__ == '__main__':
     Hebden_hyper_parameters = {
         "TR":{
+            "TR_method": hebden,
+            "delta": 0.5,
+        },
+        "epsilon": 1e-8,
+        "max_epoch": 1000,
+    }
+    Sorensen_hyper_parameters = {
+        "TR":{
+            "TR_method": sorensen,
+            "delta": 0.5,
+        },
+        "epsilon": 1e-8,
+        "max_epoch": 1000,
+    }
+    TSM_hyper_parameters = {
+        "TR":{
             "TR_method": two_subspace_min,
             "delta": 0.5,
         },
@@ -105,6 +123,7 @@ if __name__ == '__main__':
         f_funciton = test_function.func
         g_function = test_function.gfunc
         G_function = test_function.hess_func
+        write_latex_name = "EPS_{}.txt".format(m)
 
     elif args.test_fucntion == "Trig":
         X = np.array([1/m] * int(m))
@@ -112,6 +131,7 @@ if __name__ == '__main__':
         f_funciton = test_function.func
         g_function = test_function.gfunc
         G_function = test_function.hess_func
+        write_latex_name = "Trig_{}.txt".format(m)
 
     else:
         X = np.array([-3, -1, -3, -1])
@@ -120,7 +140,44 @@ if __name__ == '__main__':
         g_function = functools.partial(functions.g_wood, diff_list=diff_wood_list, symbols_list=symbols_wood_list)
         hess_wood_lists, symbols_wood_list = functions.hess_wood_expression()
         G_function = functools.partial(functions.G_wood, G_lists=hess_wood_lists, symbols_list=symbols_wood_list)
+        write_latex_name = "Wood.txt"
 
-    trust_region_method(X, f_funciton, g_function, G_function, hyper_parameters=Hebden_hyper_parameters)
+    logger.info("== " * 20 + " {} ".format(write_latex_name) + "== " * 20)
+    write_latex = open(write_latex_name, 'w')
+
+    logger.info("Hebden方法") 
+    X_star, func_X_star, iter_num, function_num, TR_iter_num, cpu_time= trust_region_method(X, f_funciton, g_function, G_function, hyper_parameters=Hebden_hyper_parameters)
+    write_latex.write(" Hebden & {fx} & {iter_num} & {func_k} & {TR_k} & {cpu_time} & {is_conv} \\\\ \n".format(
+        fx = format(func_X_star, ".4e"),
+        iter_num = str(iter_num),
+        func_k = str(function_num),
+        TR_k = str(TR_iter_num),
+        cpu_time = round(cpu_time, 4),
+        is_conv = "是" if func_X_star < 1e-5 else "否"
+    ))
+
+    logger.info("More-Sorensen方法") 
+    X_star, func_X_star, iter_num, function_num, TR_iter_num, cpu_time= trust_region_method(X, f_funciton, g_function, G_function, hyper_parameters=Sorensen_hyper_parameters)
+
+    write_latex.write(" More-Sorensen & {fx} & {iter_num} & {func_k} & {TR_k} & {cpu_time} & {is_conv} \\\\ \n".format(
+        fx = format(func_X_star, ".4e"),
+        iter_num = str(iter_num),
+        func_k = str(function_num),
+        TR_k = str(TR_iter_num),
+        cpu_time = round(cpu_time, 4),
+        is_conv = "是" if func_X_star < 1e-5 else "否"
+    ))
+
+    logger.info("二维子空间极小化") 
+    X_star, func_X_star, iter_num, function_num, TR_iter_num, cpu_time= trust_region_method(X, f_funciton, g_function, G_function, hyper_parameters=TSM_hyper_parameters)
+  
+    write_latex.write(" 二维子空间极小化 & {fx} & {iter_num} & {func_k} & {TR_k} & {cpu_time} & {is_conv} \\\\ \n".format(
+        fx = format(func_X_star, ".4e"),
+        iter_num = str(iter_num),
+        func_k = str(function_num),
+        TR_k = str(TR_iter_num),
+        cpu_time = round(cpu_time, 4),
+        is_conv = "是" if func_X_star < 1e-5 else "否"
+    ))
 
 
