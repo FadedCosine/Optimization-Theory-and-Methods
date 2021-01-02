@@ -15,7 +15,7 @@
 |  ├── fletcher_freeman.py # Fletcher Freeman方法的代码实现
 |  ├── newton_method.py # 包括了阻尼牛顿法、GM稳定牛顿法的代码实现
 |  └── inexact_newton_method.py #非精确牛顿法和非精确牛顿回溯法的代码实现
-├── Trust_Region #包括信赖域型算法主框架，以及对信赖域子问题求解的不同算法
+├── Trust_Region_Methods #包括信赖域型算法主框架，以及对信赖域子问题求解的不同算法
 |  ├── hebden.py #包括Hebden方法求解信赖域子问题的代码实现
 |  ├── sorensen.py #包括More-Sorensen方法求解信赖域子问题的代码实现
 |  ├── trust_region_main.py #包括信赖域型算法主框架的实现，以及在测试函数上的测试代码
@@ -46,11 +46,11 @@ python newton_methods_main.py \
 
 这些程序的数值实验均在对应的文件中，注释或者解开对应的注释、修改对应的参数即可运行对应函数的数值实验。
 
-对于信赖域型的方法，Trust_Region/trust_region_main.py文件中包括了所有数值实验的代码，(需要先声明python的工作路径，通过该命令： export PYTHONPATH="${PYTHONPATH}:./" )可以在当前目录直接运行Trust_Region/main.py，
+对于信赖域型的方法，Trust_Region_Methods/trust_region_main.py文件中包括了所有数值实验的代码，(需要先声明python的工作路径，通过该命令： export PYTHONPATH="${PYTHONPATH}:./" )可以在当前目录直接运行Trust_Region_Methods/main.py，
 
 如：
 ```python
-python Trust_Region/trust_region_main.py \
+python Trust_Region_Methods/trust_region_main.py \
 --test_fucntion Trig \
 --m 20
 ```
